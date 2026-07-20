@@ -1,0 +1,38 @@
+# ---- Environment / secrets ----
+.env
+.env.local
+*.env
+
+# ---- Python (backend, ml) ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+.venv/
+*.sqlite3
+
+# ---- SQLite database files ----
+backend/data/*.db
+backend/data/*.sqlite
+backend/data/*.sqlite3
+!backend/data/.gitkeep
+
+# ---- Node / frontend ----
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+npm-debug.log*
+
+# ---- ML artifacts (trained models, checkpoints — Module 10) ----
+ml/checkpoints/
+ml/*.pt
+ml/*.h5
+ml/data/raw/
+ml/data/processed/
+
+# ---- OS / editor ----
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
