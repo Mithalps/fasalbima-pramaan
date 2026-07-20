@@ -1,1 +1,25 @@
 @import "tailwindcss";
+
+@theme {
+  /* Palette — warm ledger paper, crop-field green, soil brown, wheat gold.
+     Chosen for a farmer-facing government/insurance tool, not a startup SaaS look. */
+  --color-paper: #faf6ee;
+  --color-ink: #22301f;
+  --color-forest: #2f4b3c;
+  --color-forest-dark: #1f3327;
+  --color-soil: #8b5e3c;
+  --color-wheat: #c9a227;
+  --color-clay: #a63d40;
+  --color-line: #d8cfbc;
+
+  --font-display: "Fraunces", ui-serif, serif;
+  --font-body: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+}
+

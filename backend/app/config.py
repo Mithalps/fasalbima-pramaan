@@ -21,6 +21,13 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "sqlite:///./data/fasalbima.db"
 
+    # Evidence upload (Feature 2)
+    # Path is relative to the backend/ working directory, same convention as database_url.
+    upload_dir: str = "./uploads"
+    upload_url_prefix: str = "/uploads"
+    max_evidence_file_size_mb: int = 10
+    max_evidence_images_per_claim: int = 5
+
     # Reserved for later modules (Module 6: Whisper, Module 8: Open-Meteo).
     # Declared now so .env.example documents them from the start.
     whisper_model_size: str = "small"
