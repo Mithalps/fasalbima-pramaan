@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { getClaim } from "../api/claims";
-import { listEvidence } from "../api/evidence";
 import { extractErrorMessage } from "../api/client";
 
 const DAMAGE_TYPE_LABELS = {
@@ -25,7 +24,6 @@ export default function ViewClaimPage() {
   const [claim, setClaim] = useState(null);
   const [status, setStatus] = useState("loading"); // loading | ready | not_found | error
   const [errorMessage, setErrorMessage] = useState("");
-  const [evidenceItems, setEvidenceItems] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -37,15 +35,6 @@ export default function ViewClaimPage() {
         if (cancelled) return;
         setClaim(data);
         setStatus("ready");
-
-        // Evidence is fetched separately and best-effort: a farmer should
-        // still see their claim details even if this call fails.
-        try {
-          const evidence = await listEvidence(claimId);
-          if (!cancelled) setEvidenceItems(evidence);
-        } catch {
-          // Silently ignored — the Evidence section just shows as empty.
-        }
       } catch (error) {
         if (cancelled) return;
         if (error.response?.status === 404) {
@@ -158,31 +147,6 @@ export default function ViewClaimPage() {
                   <Field label="Village" value={claim.village} />
                 </Section>
               </div>
-
-              {evidenceItems.length > 0 && (
-                <div className="px-6 sm:px-8 pb-6">
-                  <h2 className="text-xs font-semibold tracking-widest text-soil uppercase mb-3">
-                    Evidence ({evidenceItems.length})
-                  </h2>
-                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                    {evidenceItems.map((item) => (
-                      <a
-                        key={item.id}
-                        href={item.file_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="aspect-square rounded-lg overflow-hidden border border-line bg-white block"
-                      >
-                        <img
-                          src={item.file_url}
-                          alt={item.file_name}
-                          className="w-full h-full object-cover"
-                        />
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               <div className="px-6 sm:px-8 py-4 border-t border-line bg-paper/60 text-xs text-ink/50 flex flex-wrap justify-between gap-2">
                 <span>Filed on {new Date(claim.created_at).toLocaleString()}</span>

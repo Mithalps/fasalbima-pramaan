@@ -1,6 +1,7 @@
 from app.schemas.farmer import FarmerCreate, FarmerRead
 from app.schemas.claim import ClaimCreate, ClaimUpdate, ClaimRead
-from app.schemas.evidence import EvidenceRead
+from app.schemas.speech import TranscribeResponse
+from app.schemas.classifier import ClassifyResponse
 
 __all__ = [
     "FarmerCreate",
@@ -8,5 +9,6 @@ __all__ = [
     "ClaimCreate",
     "ClaimUpdate",
     "ClaimRead",
-    "EvidenceRead",
+    "TranscribeResponse",
+    "ClassifyResponse",
 ]

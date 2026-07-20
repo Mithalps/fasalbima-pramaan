@@ -1,0 +1,21 @@
+2026-07-20 20:23:01 | INFO     | Using device: cpu
+2026-07-20 20:23:01 | INFO     | Loaded 3 class names: ['Healthy', 'Powdery', 'Rust']
+2026-07-20 20:23:01 | INFO     | Test set size: 150 images
+2026-07-20 20:23:01 | INFO     | Loaded checkpoint from C:\Users\DELL\Desktop\FaisalBheema\fasalbima-pramaan\ml\outputs\checkpoints\best_model.pth (epoch=10, val_loss=0.0396)
+2026-07-20 20:23:34 | INFO     | Saved confusion matrix to C:\Users\DELL\Desktop\FaisalBheema\fasalbima-pramaan\ml\outputs\plots/confusion_matrix.png
+2026-07-20 20:23:34 | INFO     | Test Loss: 0.2203 | Test Accuracy: 94.67%
+2026-07-20 20:23:34 | INFO     | Confusion Matrix:
+[[50  0  0]
+ [ 4 46  0]
+ [ 3  1 46]]
+2026-07-20 20:23:34 | INFO     | Classification Report:
+              precision    recall  f1-score   support
+
+     Healthy     0.8772    1.0000    0.9346        50
+     Powdery     0.9787    0.9200    0.9485        50
+        Rust     1.0000    0.9200    0.9583        50
+
+    accuracy                         0.9467       150
+   macro avg     0.9520    0.9467    0.9471       150
+weighted avg     0.9520    0.9467    0.9471       150
+

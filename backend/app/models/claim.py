@@ -80,10 +80,3 @@ class Claim(Base):
     )
 
     farmer: Mapped["Farmer"] = relationship("Farmer", back_populates="claims")
-
-    # Feature 2: evidence photos attached to this claim. Deleting a claim
-    # deletes its evidence rows too — the actual files are cleaned up in
-    # services/claim_service.delete_claim before this cascade runs.
-    evidence_items: Mapped[list["Evidence"]] = relationship(
-        "Evidence", back_populates="claim", cascade="all, delete-orphan"
-    )

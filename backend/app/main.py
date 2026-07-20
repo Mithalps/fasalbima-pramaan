@@ -1,23 +1,20 @@
 import logging
-import os
 
 from fastapi import FastAPI, Depends, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import get_db, Base, engine
 
-# Importing app.models registers Farmer, Claim, and Evidence with Base's
-# metadata. This import must happen before Base.metadata.create_all() below,
-# or create_all() would run with no tables to create.
+# Importing app.models registers Farmer and Claim with Base's metadata.
+# This import must happen before Base.metadata.create_all() below, or
+# create_all() would run with no tables to create.
 import app.models  # noqa: F401
-from app.routers import claims
-from app.routers.evidence import claims_router as evidence_claims_router
-from app.routers.evidence import evidence_router
+from app.routers import claims, classifier, speech
+from app.services import classifier_service
 
 logging.basicConfig(
     level=logging.INFO,
@@ -52,11 +49,16 @@ def on_startup():
     Base.metadata.create_all(bind=engine)
     logger.info("Database tables verified/created.")
 
-    # Feature 2: make sure the evidence-photo upload directory exists.
-    # SQLite creates its own file, but the filesystem won't create this
-    # folder on its own.
-    os.makedirs(settings.upload_dir, exist_ok=True)
-    logger.info("Upload directory verified/created at %s", settings.upload_dir)
+    try:
+        classifier_service.load_model()
+    except Exception:
+        # A missing/corrupt checkpoint shouldn't take down claim filing or
+        # voice transcription — /api/classify will return 503 until this is
+        # fixed, everything else keeps working.
+        logger.exception(
+            "Image classifier failed to load. /api/classify will return 503 "
+            "until this is fixed."
+        )
 
 
 @app.exception_handler(Exception)
@@ -75,22 +77,8 @@ def unhandled_exception_handler(request: Request, exc: Exception):
 
 
 app.include_router(claims.router)
-app.include_router(evidence_claims_router)
-app.include_router(evidence_router)
-
-# StaticFiles requires its directory to exist at mount time (import time),
-# which is earlier than the startup event above — so it's created here too,
-# not just in on_startup.
-os.makedirs(settings.upload_dir, exist_ok=True)
-
-# Serves uploaded evidence photos at e.g. /uploads/{claim_id}/{file}.jpg so
-# the frontend can render thumbnails directly from the file_url the API
-# returns.
-app.mount(
-    settings.upload_url_prefix,
-    StaticFiles(directory=settings.upload_dir),
-    name="uploads",
-)
+app.include_router(speech.router)
+app.include_router(classifier.router)
 
 
 @app.get("/api/health")

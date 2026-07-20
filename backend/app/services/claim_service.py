@@ -92,15 +92,6 @@ def update_claim(db: Session, claim_id: str, update_data: ClaimUpdate) -> Claim:
 
 def delete_claim(db: Session, claim_id: str) -> None:
     claim = get_claim(db, claim_id)
-
-    # Local import to avoid a circular import (evidence_service imports this
-    # module for get_claim). The ORM cascade on Claim.evidence_items removes
-    # the Evidence *rows*; this removes the actual files from disk, which
-    # SQLAlchemy has no knowledge of.
-    from app.services import evidence_service
-
-    evidence_service.delete_all_files_for_claim(db, claim_id)
-
     db.delete(claim)
     db.commit()
     logger.info("Claim deleted id=%s", claim_id)

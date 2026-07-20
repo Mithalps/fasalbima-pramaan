@@ -14,13 +14,6 @@ export default defineConfig({
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },
-      // Feature 2: evidence photo thumbnails are served by the backend at
-      // /uploads/... — proxied the same way as /api so the browser only
-      // ever talks to one origin in development.
-      '/uploads': {
-        target: 'http://127.0.0.1:8000',
-        changeOrigin: true,
-      },
     },
   },
 })

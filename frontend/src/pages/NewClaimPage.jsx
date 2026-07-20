@@ -3,15 +3,13 @@ import { useNavigate } from "react-router-dom";
 import StepTabs from "../components/StepTabs";
 import FormField from "../components/FormField";
 import Button from "../components/Button";
-import EvidenceUploader from "../components/EvidenceUploader";
-import { createClaim, deleteClaim } from "../api/claims";
+import { createClaim } from "../api/claims";
 import { extractErrorMessage } from "../api/client";
 
 const STEPS = [
   { key: "farmer", label: "Farmer" },
   { key: "crop", label: "Crop" },
   { key: "damage", label: "Damage" },
-  { key: "evidence", label: "Evidence" },
   { key: "review", label: "Review" },
 ];
 
@@ -43,19 +41,6 @@ export default function NewClaimPage() {
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
-  // Feature 2: evidence photos must be uploaded against a real claim_id
-  // (POST /api/claims/{id}/evidence), but the required UI flow puts the
-  // Evidence step before the final Review/Submit. So the claim is created
-  // as soon as the farmer finishes the Damage step — the "Submit" button on
-  // Review no longer creates the claim, it just confirms and navigates.
-  // See docs/MODULE_3.md ("Design decisions") for the full rationale and
-  // its one known trade-off (an abandoned flow after this point leaves a
-  // claim with no evidence in the database).
-  const [claimId, setClaimId] = useState(null);
-  const [evidenceItems, setEvidenceItems] = useState([]);
-  const [creatingClaim, setCreatingClaim] = useState(false);
-  const [claimCreateError, setClaimCreateError] = useState("");
 
   function updateField(event) {
     const { name, value } = event.target;
@@ -111,36 +96,8 @@ export default function NewClaimPage() {
     return Object.keys(nextErrors).length === 0;
   }
 
-  async function goNext() {
+  function goNext() {
     if (!validateCurrentStep()) return;
-
-    const stepKey = STEPS[stepIndex].key;
-
-    if (stepKey === "damage" && !claimId) {
-      setClaimCreateError("");
-      setCreatingClaim(true);
-      try {
-        const payload = {
-          farmer: {
-            farmer_name: formData.farmer_name.trim(),
-            mobile_number: formData.mobile_number.trim(),
-          },
-          crop_type: formData.crop_type.trim(),
-          damage_type: formData.damage_type,
-          damage_date: formData.damage_date,
-          district: formData.district.trim(),
-          village: formData.village.trim(),
-        };
-        const claim = await createClaim(payload);
-        setClaimId(claim.claim_id);
-      } catch (error) {
-        setClaimCreateError(extractErrorMessage(error));
-        return; // stay on the Damage step so the farmer can retry
-      } finally {
-        setCreatingClaim(false);
-      }
-    }
-
     setStepIndex((index) => Math.min(index + 1, STEPS.length - 1));
   }
 
@@ -153,13 +110,6 @@ export default function NewClaimPage() {
     setSubmitError("");
     setSubmitting(true);
     try {
-      if (claimId) {
-        navigate(`/claims/${claimId}/success`);
-        return;
-      }
-      // Defensive fallback: shouldn't happen since the claim is created
-      // when leaving the Damage step, but guards against an unexpected
-      // state (e.g. the farmer somehow reached Review without it).
       const payload = {
         farmer: {
           farmer_name: formData.farmer_name.trim(),
@@ -178,21 +128,6 @@ export default function NewClaimPage() {
     } finally {
       setSubmitting(false);
     }
-  }
-
-  async function handleCancel() {
-    // If a claim was already created (evidence step or later), leaving the
-    // flow without finishing Review would strand it in the database with
-    // no evidence and no real submission intent — so it's cleaned up here.
-    if (claimId) {
-      try {
-        await deleteClaim(claimId);
-      } catch {
-        // Best-effort cleanup; nothing useful to show the farmer here since
-        // they're already leaving the flow.
-      }
-    }
-    navigate("/");
   }
 
   const stepKey = STEPS[stepIndex].key;
@@ -309,21 +244,7 @@ export default function NewClaimPage() {
                       placeholder="e.g. Hesaraghatta"
                     />
                   </div>
-
-                  {claimCreateError && (
-                    <p className="text-sm text-clay bg-clay/10 border border-clay/30 rounded-lg px-4 py-3">
-                      {claimCreateError}
-                    </p>
-                  )}
                 </div>
-              )}
-
-              {stepKey === "evidence" && claimId && (
-                <EvidenceUploader
-                  claimId={claimId}
-                  evidenceItems={evidenceItems}
-                  setEvidenceItems={setEvidenceItems}
-                />
               )}
 
               {stepKey === "review" && (
@@ -352,32 +273,7 @@ export default function NewClaimPage() {
                     <ReviewRow label="Damage date" value={formData.damage_date} />
                     <ReviewRow label="District" value={formData.district} />
                     <ReviewRow label="Village" value={formData.village} />
-                    <ReviewRow
-                      label="Evidence photos"
-                      value={
-                        evidenceItems.length > 0
-                          ? `${evidenceItems.length} uploaded`
-                          : "None uploaded"
-                      }
-                    />
                   </dl>
-
-                  {evidenceItems.length > 0 && (
-                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                      {evidenceItems.map((item) => (
-                        <div
-                          key={item.id}
-                          className="aspect-square rounded-lg overflow-hidden border border-line bg-white"
-                        >
-                          <img
-                            src={item.file_url}
-                            alt={item.file_name}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
 
                   {submitError && (
                     <p className="text-sm text-clay bg-clay/10 border border-clay/30 rounded-lg px-4 py-3">
@@ -390,8 +286,7 @@ export default function NewClaimPage() {
               <div className="flex items-center justify-between mt-8 pt-6 border-t border-line">
                 <Button
                   variant="secondary"
-                  onClick={stepIndex === 0 ? handleCancel : goBack}
-                  disabled={creatingClaim}
+                  onClick={stepIndex === 0 ? () => navigate("/") : goBack}
                 >
                   {stepIndex === 0 ? "Cancel" : "← Back"}
                 </Button>
@@ -401,9 +296,7 @@ export default function NewClaimPage() {
                     Submit claim
                   </Button>
                 ) : (
-                  <Button onClick={goNext} loading={creatingClaim}>
-                    Continue →
-                  </Button>
+                  <Button onClick={goNext}>Continue →</Button>
                 )}
               </div>
             </div>

@@ -6,40 +6,93 @@ class ClaimNotFoundError(Exception):
         super().__init__(f"Claim '{claim_id}' was not found")
 
 
-class EvidenceNotFoundError(Exception):
-    """Raised when an evidence id does not exist. Routers translate this to a 404."""
+class SpeechServiceError(Exception):
+    """
+    Base class for every speech-transcription failure. Each subclass carries
+    the HTTP status code the router should respond with, so the router never
+    has to guess which status fits which failure.
+    """
 
-    def __init__(self, evidence_id: str):
-        self.evidence_id = evidence_id
-        super().__init__(f"Evidence '{evidence_id}' was not found")
+    status_code = 500
 
-
-class UnsupportedFileTypeError(Exception):
-    """Raised when an uploaded file isn't one of the accepted image formats. -> 415."""
-
-    def __init__(self, content_type: str):
-        self.content_type = content_type
-        super().__init__(f"Unsupported file type '{content_type}'. Only JPEG, PNG, and WEBP images are allowed.")
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(message)
 
 
-class FileTooLargeError(Exception):
-    """Raised when an uploaded file exceeds the per-image size limit. -> 413."""
+class MissingAPIKeyError(SpeechServiceError):
+    """GROQ_API_KEY is not configured on the server — this is a server misconfiguration, not the caller's fault."""
 
-    def __init__(self, max_size_mb: int):
-        self.max_size_mb = max_size_mb
-        super().__init__(f"File exceeds the maximum size of {max_size_mb}MB.")
+    status_code = 500
 
 
-class EvidenceLimitExceededError(Exception):
-    """Raised when a claim already has the maximum number of evidence images. -> 409."""
+class EmptyAudioError(SpeechServiceError):
+    """The uploaded audio file had zero bytes."""
 
-    def __init__(self, max_images: int):
-        self.max_images = max_images
-        super().__init__(f"A claim can have at most {max_images} evidence images.")
+    status_code = 400
 
 
-class InvalidImageError(Exception):
-    """Raised when a file has an accepted content-type/extension but isn't a decodable image. -> 400."""
+class UnsupportedAudioTypeError(SpeechServiceError):
+    """The uploaded file's content type isn't one Groq Whisper accepts."""
 
-    def __init__(self):
-        super().__init__("The uploaded file is not a valid image.")
+    status_code = 400
+
+
+class AudioTooLargeError(SpeechServiceError):
+    """The uploaded file exceeds the configured size limit."""
+
+    status_code = 413
+
+
+class TranscriptionTimeoutError(SpeechServiceError):
+    """Groq did not respond within the configured timeout."""
+
+    status_code = 504
+
+
+class TranscriptionFailedError(SpeechServiceError):
+    """Groq responded, but with an error, or with a response we couldn't use."""
+
+    status_code = 502
+
+
+class ClassifierServiceError(Exception):
+    """Base class for image-classification failures. Mirrors SpeechServiceError's shape."""
+
+    status_code = 500
+
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(message)
+
+
+class ClassifierNotReadyError(ClassifierServiceError):
+    """The model failed to load at startup (missing/corrupt checkpoint)."""
+
+    status_code = 503
+
+
+class EmptyImageError(ClassifierServiceError):
+    """The uploaded image file had zero bytes."""
+
+    status_code = 400
+
+
+class ImageTooLargeError(ClassifierServiceError):
+    """The uploaded image exceeds the configured size limit."""
+
+    status_code = 413
+
+
+class UnsupportedImageTypeError(ClassifierServiceError):
+    """The uploaded file's content type isn't an image type we accept."""
+
+    status_code = 400
+
+
+class InvalidImageError(ClassifierServiceError):
+    """The uploaded bytes could not be decoded as an image."""
+
+    status_code = 400
+
+
