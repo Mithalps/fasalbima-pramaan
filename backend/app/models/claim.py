@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime, date, timezone
 
-from sqlalchemy import String, Date, DateTime, ForeignKey, Enum as SAEnum
+from sqlalchemy import String, Date, DateTime, ForeignKey, Float, Boolean, Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -17,13 +17,6 @@ def _utcnow() -> datetime:
 
 
 class DamageType(str, enum.Enum):
-    """
-    Constrained to the damage scenarios PMFBY's individual-claim window
-    actually covers. Kept as an enum (not free text) so invalid values are
-    rejected at the database layer, not just the API layer, and so Swagger
-    renders this as a dropdown rather than a free-text box.
-    """
-
     FLOOD = "flood"
     DROUGHT = "drought"
     HAILSTORM = "hailstorm"
@@ -32,12 +25,6 @@ class DamageType(str, enum.Enum):
 
 
 class ClaimStatus(str, enum.Enum):
-    """
-    Claim lifecycle status. Feature 1 only ever sets SUBMITTED on creation;
-    the remaining values exist so the schema doesn't need to change when
-    later features (surveyor review, evidence packet ready) start using them.
-    """
-
     SUBMITTED = "submitted"
     UNDER_REVIEW = "under_review"
     EVIDENCE_READY = "evidence_ready"
@@ -54,9 +41,6 @@ class Claim(Base):
         String(36), ForeignKey("farmers.farmer_id"), nullable=False, index=True
     )
 
-    # Free text, not an enum: the proposal's own scalability section notes
-    # new crops are added by labeling more images, not by changing code —
-    # locking this to an enum would contradict that.
     crop_type: Mapped[str] = mapped_column(String(80), nullable=False)
 
     damage_type: Mapped[DamageType] = mapped_column(
@@ -79,4 +63,20 @@ class Claim(Base):
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow, nullable=False
     )
 
+    # Module 10: Weather Validation. All nullable — populated after claim
+    # creation by an automatic weather-validation call in claim_service.py,
+    # and left null if that call fails or isn't applicable to the reported
+    # damage_type. Weather validation is corroborating evidence only; it
+    # never overrides the farmer-reported damage_type or blocks creation.
+    weather_verified: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    weather_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    precipitation: Mapped[float | None] = mapped_column(Float, nullable=True)
+    temperature_max: Mapped[float | None] = mapped_column(Float, nullable=True)
+    temperature_min: Mapped[float | None] = mapped_column(Float, nullable=True)
+    windspeed: Mapped[float | None] = mapped_column(Float, nullable=True)
+
     farmer: Mapped["Farmer"] = relationship("Farmer", back_populates="claims")
+
+    evidence_items: Mapped[list["Evidence"]] = relationship(
+        "Evidence", back_populates="claim", cascade="all, delete-orphan"
+    )

@@ -94,5 +94,115 @@ class InvalidImageError(ClassifierServiceError):
     """The uploaded bytes could not be decoded as an image."""
 
     status_code = 400
+# ------------------------------------------------------------------
+# Evidence upload compatibility aliases
+# ------------------------------------------------------------------
+
+class FileTooLargeError(ImageTooLargeError):
+    """Backward-compatible alias for evidence uploads."""
+    pass
 
 
+class UnsupportedFileTypeError(UnsupportedImageTypeError):
+    """Backward-compatible alias for evidence uploads."""
+    pass
+
+
+class EvidenceNotFoundError(Exception):
+    """Raised when an evidence image cannot be found."""
+
+    def __init__(self, evidence_id: str):
+        self.evidence_id = evidence_id
+        super().__init__(f"Evidence '{evidence_id}' was not found")
+
+
+class EvidenceLimitExceededError(Exception):
+    """Raised when more than the maximum number of evidence images are uploaded."""
+
+    def __init__(self, limit: int = 5):
+        self.limit = limit
+        super().__init__(f"A claim can contain at most {limit} evidence images.")
+
+class WeatherValidationError(Exception):
+    """Base class for weather-validation failures."""
+
+    status_code = 500
+
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(message)
+
+
+class InvalidDateError(WeatherValidationError):
+    """The damage_date is malformed or in the future."""
+
+    status_code = 400
+
+    def __init__(self, date_value: str):
+        super().__init__(f"'{date_value}' is not a valid past date.")
+
+
+class LocationNotFoundError(WeatherValidationError):
+    """The district/village could not be geocoded."""
+
+    status_code = 404
+
+    def __init__(self, district: str):
+        super().__init__(f"Could not resolve location for district '{district}'.")
+
+
+class WeatherDataUnavailableError(WeatherValidationError):
+    """Open-Meteo has no historical data for the requested date/location."""
+
+    status_code = 502
+
+    def __init__(self, date_value: str):
+        super().__init__(f"No weather data available for {date_value}.")
+
+
+class WeatherServiceUnavailableError(WeatherValidationError):
+    """Open-Meteo itself could not be reached."""
+
+    status_code = 503
+
+class WeatherValidationError(Exception):
+    """Base class for weather-validation failures."""
+
+    status_code = 500
+
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(message)
+
+
+class InvalidDateError(WeatherValidationError):
+    """The damage_date is malformed or in the future."""
+
+    status_code = 400
+
+    def __init__(self, date_value: str):
+        super().__init__(f"'{date_value}' is not a valid past date.")
+
+
+class LocationNotFoundError(WeatherValidationError):
+    """The district/village could not be geocoded."""
+
+    status_code = 404
+
+    def __init__(self, district: str):
+        super().__init__(f"Could not resolve location for district '{district}'.")
+
+
+class WeatherDataUnavailableError(WeatherValidationError):
+    """Open-Meteo has no historical data for the requested date/location."""
+
+    status_code = 502
+
+    def __init__(self, date_value: str):
+        super().__init__(f"No weather data available for {date_value}.")
+
+
+class WeatherServiceUnavailableError(WeatherValidationError):
+    """Open-Meteo itself could not be reached."""
+
+    status_code = 503    

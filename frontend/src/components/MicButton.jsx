@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { transcribeAudio } from "../api/speech";
 import { encodeWavFromBlob } from "../utils/audioEncoder";
 import { extractErrorMessage } from "../api/client";
+import { MicIcon, StopIcon } from "./Icons";
 
 const STATE = {
   IDLE: "idle",
@@ -137,8 +138,10 @@ export default function MicButton({ onTranscript, language = "kn", label }) {
       >
         {state === STATE.TRANSCRIBING ? (
           <span className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+        ) : state === STATE.RECORDING ? (
+          <StopIcon className="h-3.5 w-3.5" />
         ) : (
-          <span aria-hidden="true">{state === STATE.RECORDING ? "⏹" : "🎤"}</span>
+          <MicIcon className="h-4 w-4" />
         )}
       </button>
 

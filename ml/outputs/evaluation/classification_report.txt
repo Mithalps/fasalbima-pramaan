@@ -1,0 +1,13 @@
+FasalBima Pramaan - Validation Classification Report
+=======================================================
+
+                precision    recall  f1-score   support
+
+Drought Stress      1.000     0.833     0.909         6
+  Flood Damage      1.000     0.857     0.923         7
+       Healthy      0.778     1.000     0.875         7
+   Pest Attack      1.000     1.000     1.000         8
+
+      accuracy                          0.929        28
+     macro avg      0.944     0.923     0.927        28
+  weighted avg      0.944     0.929     0.930        28

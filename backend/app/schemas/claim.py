@@ -87,4 +87,14 @@ class ClaimRead(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+    # Module 10: Weather Validation. All nullable — a claim has no weather
+    # data until validation runs, and keeps null values if validation
+    # failed or wasn't applicable to the reported damage_type.
+    weather_verified: bool | None = None
+    weather_reason: str | None = None
+    precipitation: float | None = None
+    temperature_max: float | None = None
+    temperature_min: float | None = None
+    windspeed: float | None = None
+
     model_config = ConfigDict(from_attributes=True)

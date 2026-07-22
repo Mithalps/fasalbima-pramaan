@@ -1,5 +1,9 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 class Settings(BaseSettings):
     """
@@ -40,14 +44,23 @@ class Settings(BaseSettings):
     speech_default_language: str = "kn"
     speech_max_audio_size_mb: int = 15
     speech_request_timeout_seconds: float = 25.0
+    # Weather validation (Module 10: Open-Meteo historical weather check)
+    weather_request_timeout_seconds: float = 10.0
+
+
 
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=BASE_DIR / ".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )
 
+    # Evidence upload
+    upload_dir: str = "./uploads"
+    upload_url_prefix: str = "/uploads"
+    max_evidence_file_size_mb: int = 10
+    max_evidence_images_per_claim: int = 5
 
 # Single shared settings instance imported throughout the app
 settings = Settings()

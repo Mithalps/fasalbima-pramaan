@@ -1,10 +1,12 @@
 import { useRef, useState } from "react";
 import { uploadEvidence, deleteEvidence } from "../api/evidence";
 import { extractErrorMessage } from "../api/client";
+import { CloseIcon, UploadIcon } from "./Icons";
 
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_SIZE_MB = 10;
 const MAX_IMAGES = 5;
+const CLASSIFY_ENDPOINT = "/api/classify";
 
 /**
  * EvidenceUploader
@@ -18,16 +20,25 @@ const MAX_IMAGES = 5;
  * In-flight uploads (with their own progress bars) are tracked in local
  * state only, and promoted into `evidenceItems` once the server confirms
  * them.
+ *
+ * Once an upload is confirmed, the same original File object is sent to
+ * the AI damage classifier (/api/classify) as multipart/form-data under
+ * the "image" field. Classification is best-effort: if it fails, the
+ * photo stays uploaded and the farmer can continue the claim as normal.
  */
 export default function EvidenceUploader({ claimId, evidenceItems, setEvidenceItems }) {
   const [uploading, setUploading] = useState([]); // { clientId, name, previewUrl, progress, error }
   const [dragActive, setDragActive] = useState(false);
+  const [classifications, setClassifications] = useState({}); // evidenceId -> { status, prediction, confidence }
   const fileInputRef = useRef(null);
+  const API_BASE = "http://localhost:8000";
 
   const totalCount = evidenceItems.length + uploading.filter((u) => !u.error).length;
   const slotsRemaining = Math.max(0, MAX_IMAGES - totalCount);
+  const canUpload = Boolean(claimId) && slotsRemaining > 0;
 
   function openFileBrowser() {
+    if (!claimId) return;
     fileInputRef.current?.click();
   }
 
@@ -42,6 +53,7 @@ export default function EvidenceUploader({ claimId, evidenceItems, setEvidenceIt
   }
 
   function handleFiles(fileList) {
+    if (!claimId) return;
     const files = Array.from(fileList);
     if (files.length === 0) return;
 
@@ -98,6 +110,8 @@ export default function EvidenceUploader({ claimId, evidenceItems, setEvidenceIt
       .then((evidence) => {
         setEvidenceItems((previous) => [...previous, evidence]);
         setUploading((previous) => previous.filter((item) => item.clientId !== clientId));
+        // Classify using the SAME original File object that was just uploaded.
+        classifyEvidenceImage(evidence, file);
       })
       .catch((error) => {
         setUploading((previous) =>
@@ -110,6 +124,49 @@ export default function EvidenceUploader({ claimId, evidenceItems, setEvidenceIt
       });
   }
 
+  // Best-effort AI classification. Never blocks or reverts the upload -
+  // if this fails, the farmer can still continue with the claim.
+  function classifyEvidenceImage(evidence, file) {
+    setClassifications((previous) => ({
+      ...previous,
+      [evidence.id]: { status: "loading" },
+    }));
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    fetch(CLASSIFY_ENDPOINT, {
+      method: "POST",
+      body: formData,
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error("Classification request failed.");
+        return response.json();
+      })
+      .then((data) => {
+        setClassifications((previous) => ({
+          ...previous,
+          [evidence.id]: {
+            status: "done",
+            prediction: data.prediction,
+            confidence: data.confidence,
+          },
+        }));
+      })
+      .catch(() => {
+        setClassifications((previous) => ({
+          ...previous,
+          [evidence.id]: { status: "error" },
+        }));
+      });
+  }
+
+  function formatConfidence(confidence) {
+    if (typeof confidence !== "number" || Number.isNaN(confidence)) return null;
+    const percent = confidence <= 1 ? confidence * 100 : confidence;
+    return `${percent.toFixed(1)}%`;
+  }
+
   function dismissFailedUpload(clientId) {
     setUploading((previous) => previous.filter((item) => item.clientId !== clientId));
   }
@@ -118,6 +175,11 @@ export default function EvidenceUploader({ claimId, evidenceItems, setEvidenceIt
     try {
       await deleteEvidence(evidenceId);
       setEvidenceItems((previous) => previous.filter((item) => item.id !== evidenceId));
+      setClassifications((previous) => {
+        const next = { ...previous };
+        delete next[evidenceId];
+        return next;
+      });
     } catch (error) {
       // Surfaced inline rather than a full-page error — deleting one photo
       // shouldn't disrupt the rest of the claim form.
@@ -143,21 +205,28 @@ export default function EvidenceUploader({ claimId, evidenceItems, setEvidenceIt
         </p>
       </div>
 
+      {!claimId && (
+        <p className="text-sm text-clay bg-clay/10 border border-clay/30 rounded-lg px-4 py-3">
+          Please complete the previous steps first — the claim needs to be
+          created before photos can be uploaded.
+        </p>
+      )}
+
       <button
         type="button"
         onClick={openFileBrowser}
         onDragOver={(event) => {
           event.preventDefault();
-          setDragActive(true);
+          if (canUpload) setDragActive(true);
         }}
         onDragLeave={() => setDragActive(false)}
         onDrop={handleDrop}
-        disabled={slotsRemaining === 0}
+        disabled={!canUpload}
         className={`w-full rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors focus:outline-none focus:ring-2 focus:ring-forest/40 ${
           dragActive
             ? "border-forest bg-forest/5"
             : "border-line bg-paper/60 hover:border-forest/60"
-        } ${slotsRemaining === 0 ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+        } ${!canUpload ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
       >
         <input
           ref={fileInputRef}
@@ -169,6 +238,11 @@ export default function EvidenceUploader({ claimId, evidenceItems, setEvidenceIt
             handleFiles(event.target.files);
             event.target.value = ""; // allow re-selecting the same file later
           }}
+        />
+        <UploadIcon
+          className={`h-6 w-6 mx-auto mb-2 ${
+            dragActive ? "text-forest" : "text-ink/30"
+          }`}
         />
         <p className="text-sm font-medium text-ink">
           {slotsRemaining === 0
@@ -183,26 +257,51 @@ export default function EvidenceUploader({ claimId, evidenceItems, setEvidenceIt
 
       {(evidenceItems.length > 0 || uploading.length > 0) && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {evidenceItems.map((item) => (
-            <div
-              key={item.id}
-              className="relative group aspect-square rounded-lg overflow-hidden border border-line bg-white"
-            >
-              <img
-                src={item.file_url}
-                alt={item.file_name}
-                className="w-full h-full object-cover"
-              />
-              <button
-                type="button"
-                onClick={() => handleDeleteEvidence(item.id)}
-                aria-label={`Remove ${item.file_name}`}
-                className="absolute top-1.5 right-1.5 h-7 w-7 rounded-full bg-ink/70 text-paper text-sm flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
-              >
-                ✕
-              </button>
-            </div>
-          ))}
+          {evidenceItems.map((item) => {
+            const classification = classifications[item.id];
+            return (
+              <div key={item.id} className="flex flex-col gap-1.5">
+                <div className="relative group aspect-square rounded-lg overflow-hidden border border-line bg-white">
+                <img
+                    src={`${API_BASE}${item.file_url}`}
+                    alt={item.file_name}
+                    className="w-full h-full object-cover"
+                />
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteEvidence(item.id)}
+                    aria-label={`Remove ${item.file_name}`}
+                    className="absolute top-1.5 right-1.5 h-7 w-7 rounded-full bg-ink/70 text-paper flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity hover:bg-clay"
+                  >
+                    <CloseIcon className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                {classification?.status === "loading" && (
+                  <p className="text-xs text-ink/50 px-0.5">Analyzing photo…</p>
+                )}
+
+                {classification?.status === "done" && (
+                  <div className="text-xs text-ink/80 px-0.5 leading-snug">
+                    <p>
+                      <span className="font-medium text-ink">AI Prediction:</span>{" "}
+                      {classification.prediction}
+                    </p>
+                    <p>
+                      <span className="font-medium text-ink">Confidence:</span>{" "}
+                      {formatConfidence(classification.confidence)}
+                    </p>
+                  </div>
+                )}
+
+                {classification?.status === "error" && (
+                  <p className="text-xs text-ink/40 px-0.5">
+                    AI prediction unavailable
+                  </p>
+                )}
+              </div>
+            );
+          })}
 
           {uploading.map((item) => (
             <div

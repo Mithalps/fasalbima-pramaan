@@ -6,6 +6,8 @@
  * fixed order of the actual PMFBY claim form — rather than decorating
  * an otherwise plain multi-step form.
  */
+import { CheckIcon } from "./Icons";
+
 export default function StepTabs({ steps, currentIndex }) {
   return (
     <div className="flex border-b border-line">
@@ -30,7 +32,7 @@ export default function StepTabs({ steps, currentIndex }) {
                     : "bg-line text-ink/50"
                 }`}
               >
-                {isComplete ? "✓" : index + 1}
+                {isComplete ? <CheckIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> : index + 1}
               </span>
               <span
                 className={`text-xs sm:text-sm font-medium truncate ${

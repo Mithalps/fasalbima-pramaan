@@ -1,30 +1,102 @@
-2026-07-20 19:23:51 | INFO     | ======================================================================
-2026-07-20 19:23:51 | INFO     | FasalBima / Plant Disease Classifier - Training started
-2026-07-20 19:23:51 | INFO     | ======================================================================
-2026-07-20 19:23:51 | INFO     | Using device: cpu
-2026-07-20 19:23:51 | INFO     | Detected 3 classes: ['Healthy', 'Powdery', 'Rust']
-2026-07-20 19:23:51 | INFO     | Saved class names to C:\Users\DELL\Desktop\FaisalBheema\fasalbima-pramaan\ml\outputs\checkpoints\class_names.json
-2026-07-20 19:23:52 | INFO     | Model: mobilenet_v2 (pretrained=True, frozen_features=True)
-2026-07-20 19:23:52 | INFO     | Trainable parameters: 657,411 / 2,881,283 total
-2026-07-20 19:28:40 | INFO     | Epoch 001/10 | Train Loss: 0.5373 | Train Acc: 77.38% | Val Loss: 0.1567 | Val Acc: 96.67% | LR: 1.00e-03 | Time: 288.7s
-2026-07-20 19:28:40 | INFO     | New best model saved (val_loss=0.1567) -> C:\Users\DELL\Desktop\FaisalBheema\fasalbima-pramaan\ml\outputs\checkpoints\best_model.pth
-2026-07-20 19:35:15 | INFO     | Epoch 002/10 | Train Loss: 0.3194 | Train Acc: 87.59% | Val Loss: 0.1817 | Val Acc: 93.33% | LR: 1.00e-03 | Time: 394.2s
-2026-07-20 19:35:15 | INFO     | EarlyStopping: no improvement for 1/7 epochs
-2026-07-20 19:41:42 | INFO     | Epoch 003/10 | Train Loss: 0.3188 | Train Acc: 88.88% | Val Loss: 0.0509 | Val Acc: 98.33% | LR: 1.00e-03 | Time: 387.6s
-2026-07-20 19:41:42 | INFO     | New best model saved (val_loss=0.0509) -> C:\Users\DELL\Desktop\FaisalBheema\fasalbima-pramaan\ml\outputs\checkpoints\best_model.pth
-2026-07-20 19:45:43 | INFO     | Epoch 004/10 | Train Loss: 0.3050 | Train Acc: 88.12% | Val Loss: 0.0534 | Val Acc: 98.33% | LR: 1.00e-03 | Time: 240.5s
-2026-07-20 19:45:43 | INFO     | EarlyStopping: no improvement for 1/7 epochs
-2026-07-20 19:50:09 | INFO     | Epoch 005/10 | Train Loss: 0.2801 | Train Acc: 89.56% | Val Loss: 0.0587 | Val Acc: 98.33% | LR: 1.00e-03 | Time: 266.1s
-2026-07-20 19:50:09 | INFO     | EarlyStopping: no improvement for 2/7 epochs
-2026-07-20 19:55:59 | INFO     | Epoch 006/10 | Train Loss: 0.2712 | Train Acc: 91.07% | Val Loss: 0.0760 | Val Acc: 95.00% | LR: 1.00e-03 | Time: 350.3s
-2026-07-20 19:56:00 | INFO     | EarlyStopping: no improvement for 3/7 epochs
-2026-07-20 20:02:51 | INFO     | Epoch 007/10 | Train Loss: 0.3216 | Train Acc: 88.35% | Val Loss: 0.0785 | Val Acc: 95.00% | LR: 1.00e-03 | Time: 411.6s
-2026-07-20 20:02:51 | INFO     | EarlyStopping: no improvement for 4/7 epochs
-2026-07-20 20:08:40 | INFO     | Epoch 008/10 | Train Loss: 0.2616 | Train Acc: 90.17% | Val Loss: 0.0534 | Val Acc: 98.33% | LR: 5.00e-04 | Time: 349.0s
-2026-07-20 20:08:40 | INFO     | EarlyStopping: no improvement for 5/7 epochs
-2026-07-20 20:14:56 | INFO     | Epoch 009/10 | Train Loss: 0.2547 | Train Acc: 90.92% | Val Loss: 0.0584 | Val Acc: 98.33% | LR: 5.00e-04 | Time: 376.1s
-2026-07-20 20:14:56 | INFO     | EarlyStopping: no improvement for 6/7 epochs
-2026-07-20 20:21:18 | INFO     | Epoch 010/10 | Train Loss: 0.2593 | Train Acc: 90.70% | Val Loss: 0.0396 | Val Acc: 98.33% | LR: 5.00e-04 | Time: 381.8s
-2026-07-20 20:21:18 | INFO     | New best model saved (val_loss=0.0396) -> C:\Users\DELL\Desktop\FaisalBheema\fasalbima-pramaan\ml\outputs\checkpoints\best_model.pth
-2026-07-20 20:21:18 | INFO     | Training complete in 57.4 minutes.
-2026-07-20 20:21:20 | INFO     | Saved accuracy.png and loss.png to C:\Users\DELL\Desktop\FaisalBheema\fasalbima-pramaan\ml\outputs\plots
+2026-07-22 14:36:18 | INFO     | ======================================================================
+2026-07-22 14:36:18 | INFO     | FasalBima Pramaan - Crop Damage Classifier - Training started
+2026-07-22 14:36:18 | INFO     | ======================================================================
+2026-07-22 14:36:18 | INFO     | Using device: CPU (0 GPU(s) found)
+2026-07-22 14:36:18 | INFO     | Detected classes (index order): ['drought', 'flood', 'healthy', 'pest']
+2026-07-22 14:36:18 | INFO     | Saved class names to C:\Users\DELL\Desktop\FaisalBheema\fasalbima-pramaan\ml\outputs\checkpoints\class_names.json
+2026-07-22 14:36:19 | INFO     | Computed class weights: {0: 1.2173913043478262, 1: 1.0769230769230769, 2: 0.9333333333333333, 3: 0.8484848484848485}
+2026-07-22 14:36:27 | INFO     | Backbone: EfficientNetB0 (weights=imagenet, frozen_base=True)
+2026-07-22 14:36:27 | INFO     | Model: "fasalbima_efficientnetb0"
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓
+┃ Layer (type)                         ┃ Output Shape                ┃         Param # ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━┩
+│ input_layer_1 (InputLayer)           │ (None, 224, 224, 3)         │               0 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ efficientnetb0 (Functional)          │ (None, 7, 7, 1280)          │       4,049,571 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ global_average_pooling2d             │ (None, 1280)                │               0 │
+│ (GlobalAveragePooling2D)             │                             │                 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ dropout (Dropout)                    │ (None, 1280)                │               0 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ dense (Dense)                        │ (None, 256)                 │         327,936 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ dropout_1 (Dropout)                  │ (None, 256)                 │               0 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ dense_1 (Dense)                      │ (None, 4)                   │           1,028 │
+└──────────────────────────────────────┴─────────────────────────────┴─────────────────┘
+ Total params: 4,378,535 (16.70 MB)
+ Trainable params: 328,964 (1.25 MB)
+ Non-trainable params: 4,049,571 (15.45 MB)
+
+2026-07-22 14:37:59 | INFO     | Phase 1 (frozen backbone) complete in 1.5 minutes.
+2026-07-22 14:37:59 | INFO     | Phase 1 best val_loss: 1.3846
+2026-07-22 14:38:01 | INFO     | Fine-tuning: unfroze top 25 of 238 backbone layers (BatchNormalization layers kept frozen -- 49 affected).
+2026-07-22 14:38:56 | INFO     | Phase 2 (fine-tuning) complete in 0.9 minutes.
+2026-07-22 14:38:56 | INFO     | Phase 2 best val_loss: 1.3838 (overall best kept at C:\Users\DELL\Desktop\FaisalBheema\fasalbima-pramaan\ml\outputs\checkpoints\best_model.keras)
+2026-07-22 14:39:08 | INFO     | Classification report:
+                precision    recall  f1-score   support
+
+Drought Stress      0.000     0.000     0.000         6
+  Flood Damage      0.250     1.000     0.400         7
+       Healthy      0.000     0.000     0.000         7
+   Pest Attack      0.000     0.000     0.000         8
+
+      accuracy                          0.250        28
+     macro avg      0.062     0.250     0.100        28
+  weighted avg      0.062     0.250     0.100        28
+
+2026-07-22 14:39:10 | INFO     | Saved evaluation artifacts to C:\Users\DELL\Desktop\FaisalBheema\fasalbima-pramaan\ml\outputs\evaluation (confusion_matrix.png, classification_report.txt/.json)
+2026-07-22 14:39:10 | INFO     | Saved labels.json to C:\Users\DELL\Desktop\FaisalBheema\fasalbima-pramaan\ml\outputs\checkpoints\labels.json: {'0': 'Drought Stress', '1': 'Flood Damage', '2': 'Healthy', '3': 'Pest Attack'}
+2026-07-22 14:39:33 | INFO     | Exported TensorFlow SavedModel to C:\Users\DELL\Desktop\FaisalBheema\fasalbima-pramaan\ml\outputs\saved_model
+2026-07-22 15:38:50 | INFO     | ======================================================================
+2026-07-22 15:38:50 | INFO     | FasalBima Pramaan - Crop Damage Classifier - Training started
+2026-07-22 15:38:50 | INFO     | ======================================================================
+2026-07-22 15:38:50 | INFO     | Using device: CPU (0 GPU(s) found)
+2026-07-22 15:38:50 | INFO     | Detected classes (index order): ['drought', 'flood', 'healthy', 'pest']
+2026-07-22 15:38:50 | INFO     | Saved class names to C:\Users\DELL\Desktop\FaisalBheema\fasalbima-pramaan\ml\outputs\checkpoints\class_names.json
+2026-07-22 15:38:50 | INFO     | Computed class weights: {0: 1.0740740740740742, 1: 1.1153846153846154, 2: 0.9666666666666667, 3: 0.8787878787878788}
+2026-07-22 15:38:53 | INFO     | Backbone: EfficientNetB0 (weights=imagenet, frozen_base=True)
+2026-07-22 15:38:53 | INFO     | Model: "fasalbima_efficientnetb0"
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓
+┃ Layer (type)                         ┃ Output Shape                ┃         Param # ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━┩
+│ input_layer_1 (InputLayer)           │ (None, 224, 224, 3)         │               0 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ efficientnetb0 (Functional)          │ (None, 7, 7, 1280)          │       4,049,571 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ global_average_pooling2d             │ (None, 1280)                │               0 │
+│ (GlobalAveragePooling2D)             │                             │                 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ dropout (Dropout)                    │ (None, 1280)                │               0 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ dense (Dense)                        │ (None, 256)                 │         327,936 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ dropout_1 (Dropout)                  │ (None, 256)                 │               0 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ dense_1 (Dense)                      │ (None, 4)                   │           1,028 │
+└──────────────────────────────────────┴─────────────────────────────┴─────────────────┘
+ Total params: 4,378,535 (16.70 MB)
+ Trainable params: 328,964 (1.25 MB)
+ Non-trainable params: 4,049,571 (15.45 MB)
+
+2026-07-22 15:42:31 | INFO     | Phase 1 (frozen backbone) complete in 3.6 minutes.
+2026-07-22 15:42:31 | INFO     | Phase 1 best val_loss: 0.2504
+2026-07-22 15:42:33 | INFO     | Fine-tuning: unfroze top 25 of 238 backbone layers (BatchNormalization layers kept frozen -- 49 affected).
+2026-07-22 15:43:34 | INFO     | Phase 2 (fine-tuning) complete in 1.0 minutes.
+2026-07-22 15:43:34 | INFO     | Phase 2 best val_loss: 0.2133 (overall best kept at C:\Users\DELL\Desktop\FaisalBheema\fasalbima-pramaan\ml\outputs\checkpoints\best_model.keras)
+2026-07-22 15:43:45 | INFO     | Classification report:
+                precision    recall  f1-score   support
+
+Drought Stress      1.000     0.833     0.909         6
+  Flood Damage      1.000     0.857     0.923         7
+       Healthy      0.778     1.000     0.875         7
+   Pest Attack      1.000     1.000     1.000         8
+
+      accuracy                          0.929        28
+     macro avg      0.944     0.923     0.927        28
+  weighted avg      0.944     0.929     0.930        28
+
+2026-07-22 15:43:46 | INFO     | Saved evaluation artifacts to C:\Users\DELL\Desktop\FaisalBheema\fasalbima-pramaan\ml\outputs\evaluation (confusion_matrix.png, classification_report.txt/.json)
+2026-07-22 15:43:46 | INFO     | Saved labels.json to C:\Users\DELL\Desktop\FaisalBheema\fasalbima-pramaan\ml\outputs\checkpoints\labels.json: {'0': 'Drought Stress', '1': 'Flood Damage', '2': 'Healthy', '3': 'Pest Attack'}
+2026-07-22 15:44:07 | INFO     | Exported TensorFlow SavedModel to C:\Users\DELL\Desktop\FaisalBheema\fasalbima-pramaan\ml\outputs\saved_model

@@ -92,6 +92,7 @@ def transcribe_audio(
     filename: str,
     language: str | None = None,
 ) -> str:
+
     """
     Sends audio bytes to Groq's hosted Whisper Large v3 and returns the
     transcript text.
@@ -173,6 +174,8 @@ def transcribe_audio(
         ) from exc
 
     transcript = (getattr(transcription, "text", None) or "").strip()
+
+    logger.info("TRANSCRIPT: %s", transcript)
 
     if not transcript:
         logger.error("Groq returned an empty transcript filename=%s", filename)

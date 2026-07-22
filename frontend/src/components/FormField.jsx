@@ -1,3 +1,5 @@
+import { WarningIcon } from "./Icons";
+
 /**
  * FormField
  *
@@ -63,8 +65,8 @@ export default function FormField({
       )}
 
       {error && (
-        <p className="text-sm text-clay flex items-start gap-1">
-          <span aria-hidden="true">⚠</span>
+        <p className="text-sm text-clay flex items-start gap-1.5">
+          <WarningIcon className="h-4 w-4 shrink-0 mt-0.5" />
           <span>{error}</span>
         </p>
       )}

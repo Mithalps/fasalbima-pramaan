@@ -8,6 +8,7 @@ from app.models.claim import Claim
 from app.models.farmer import Farmer
 from app.schemas.claim import ClaimCreate, ClaimUpdate
 from app.schemas.farmer import FarmerCreate
+from app.services import weather_service
 
 logger = logging.getLogger("fasalbima.claims")
 
@@ -37,6 +38,50 @@ def get_or_create_farmer(db: Session, farmer_data: FarmerCreate) -> Farmer:
     return farmer
 
 
+def _apply_weather_validation(db: Session, claim: Claim) -> None:
+    """
+    Module 10: Weather Validation.
+
+    Runs after the claim already exists and is committed, so this can
+    never prevent or roll back claim creation. Weather validation is
+    corroborating evidence only — it never overrides the farmer-reported
+    damage_type.
+
+    On success, populates weather_verified/weather_reason plus the raw
+    weather readings and commits that update separately. On any failure
+    (bad location, weather API down, no data for that date, etc.), the
+    claim is left with weather_verified=None and a generic
+    "Weather service unavailable." reason — claim creation still succeeds.
+    """
+    try:
+        result = weather_service.validate_weather(
+            district=claim.district,
+            damage_date=claim.damage_date,
+            damage_type=claim.damage_type.value,
+            village=claim.village,
+        )
+        weather = result["weather"]
+        claim.weather_verified = result["verified"]
+        claim.weather_reason = result["reason"]
+        claim.precipitation = weather["precipitation"]
+        claim.temperature_max = weather["temperature_max"]
+        claim.temperature_min = weather["temperature_min"]
+        claim.windspeed = weather["windspeed"]
+    except Exception as exc:
+        logger.warning(
+            "Weather validation failed for claim id=%s: %s", claim.claim_id, exc
+        )
+        claim.weather_verified = None
+        claim.weather_reason = "Weather service unavailable."
+        claim.precipitation = None
+        claim.temperature_max = None
+        claim.temperature_min = None
+        claim.windspeed = None
+
+    db.commit()
+    db.refresh(claim)
+
+
 def create_claim(db: Session, claim_data: ClaimCreate) -> Claim:
     farmer = get_or_create_farmer(db, claim_data.farmer)
 
@@ -57,6 +102,9 @@ def create_claim(db: Session, claim_data: ClaimCreate) -> Claim:
         farmer.farmer_id,
         claim.damage_type.value,
     )
+
+    _apply_weather_validation(db, claim)
+
     return claim
 
 

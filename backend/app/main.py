@@ -3,6 +3,8 @@ import logging
 from fastapi import FastAPI, Depends, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+import os
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -13,7 +15,7 @@ from app.database import get_db, Base, engine
 # This import must happen before Base.metadata.create_all() below, or
 # create_all() would run with no tables to create.
 import app.models  # noqa: F401
-from app.routers import claims, classifier, speech
+from app.routers import claims, classifier, speech, evidence, weather, pdf
 from app.services import classifier_service
 
 logging.basicConfig(
@@ -49,16 +51,16 @@ def on_startup():
     Base.metadata.create_all(bind=engine)
     logger.info("Database tables verified/created.")
 
-    try:
-        classifier_service.load_model()
-    except Exception:
+    #try:
+    #    classifier_service.load_model()
+    #except Exception:
         # A missing/corrupt checkpoint shouldn't take down claim filing or
         # voice transcription — /api/classify will return 503 until this is
         # fixed, everything else keeps working.
-        logger.exception(
-            "Image classifier failed to load. /api/classify will return 503 "
-            "until this is fixed."
-        )
+    #    logger.exception(
+    #        "Image classifier failed to load. /api/classify will return 503 "
+    #        "until this is fixed."
+    #    )
 
 
 @app.exception_handler(Exception)
@@ -79,6 +81,11 @@ def unhandled_exception_handler(request: Request, exc: Exception):
 app.include_router(claims.router)
 app.include_router(speech.router)
 app.include_router(classifier.router)
+
+app.include_router(evidence.claims_router)
+app.include_router(evidence.evidence_router)
+app.include_router(weather.router)
+app.include_router(pdf.router)
 
 
 @app.get("/api/health")
@@ -105,3 +112,10 @@ def root():
         "message": "FasalBima Pramaan API is running. See /docs for the interactive API explorer."
     }
 
+os.makedirs(settings.upload_dir, exist_ok=True)
+
+app.mount(
+    settings.upload_url_prefix,
+    StaticFiles(directory=settings.upload_dir),
+    name="uploads",
+)

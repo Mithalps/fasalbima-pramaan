@@ -3,13 +3,18 @@ import { useNavigate } from "react-router-dom";
 import StepTabs from "../components/StepTabs";
 import FormField from "../components/FormField";
 import Button from "../components/Button";
+import EvidenceUploader from "../components/EvidenceUploader";
 import { createClaim } from "../api/claims";
 import { extractErrorMessage } from "../api/client";
+import MicButton from "../components/MicButton";
+import { extractClaimFields } from "../utils/extractClaimFields";
+import { CheckIcon } from "../components/Icons";
 
 const STEPS = [
   { key: "farmer", label: "Farmer" },
   { key: "crop", label: "Crop" },
   { key: "damage", label: "Damage" },
+  { key: "evidence", label: "Evidence" },
   { key: "review", label: "Review" },
 ];
 
@@ -34,6 +39,23 @@ const INITIAL_FORM = {
   village: "",
 };
 
+// Field key -> human label, in the fixed display order for the
+// "Recognized details" checklist after a voice pass.
+const FIELD_LABELS = [
+  { key: "farmer_name", label: "Farmer Name" },
+  { key: "mobile_number", label: "Mobile Number" },
+  { key: "district", label: "District" },
+  { key: "village", label: "Village" },
+  { key: "crop_type", label: "Crop" },
+  { key: "damage_type", label: "Damage Type" },
+  { key: "damage_date", label: "Damage Date" },
+];
+
+const SPEECH_LANGUAGE_OPTIONS = [
+  { value: "kn", label: "Kannada" },
+  { value: "en", label: "English" },
+];
+
 export default function NewClaimPage() {
   const navigate = useNavigate();
   const [stepIndex, setStepIndex] = useState(0);
@@ -41,6 +63,15 @@ export default function NewClaimPage() {
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [voiceResult, setVoiceResult] = useState(null); // { recognizedKeys: string[] } | null
+  const [speechLanguage, setSpeechLanguage] = useState("kn");
+
+  // The claim is created once (right after the Damage step) so that the
+  // Evidence step has a real claim_id to upload photos against. Review's
+  // "Submit claim" button then just takes the farmer to the success page.
+  const [claimId, setClaimId] = useState(null);
+  const [creatingClaim, setCreatingClaim] = useState(false);
+  const [evidenceItems, setEvidenceItems] = useState([]);
 
   function updateField(event) {
     const { name, value } = event.target;
@@ -53,6 +84,30 @@ export default function NewClaimPage() {
         return next;
       });
     }
+  }
+
+  // Single big-mic flow: one 30-60s recording -> one transcription call ->
+  // rule-based extraction -> auto-fill whatever fields were detected.
+  // Anything not detected is left as-is so the farmer can fill/correct it
+  // by typing, same as before. The raw transcript is intentionally never
+  // shown - only a checklist of which fields were recognized.
+  function handleBulkTranscript(transcript) {
+    const extracted = extractClaimFields(transcript);
+    const recognizedKeys = FIELD_LABELS.map((f) => f.key).filter(
+      (key) => extracted[key]
+    );
+
+    setVoiceResult({ recognizedKeys });
+
+    if (recognizedKeys.length === 0) return;
+
+    setFormData((previous) => ({ ...previous, ...extracted }));
+
+    setErrors((previous) => {
+      const next = { ...previous };
+      recognizedKeys.forEach((key) => delete next[key]);
+      return next;
+    });
   }
 
   function validateCurrentStep() {
@@ -96,8 +151,42 @@ export default function NewClaimPage() {
     return Object.keys(nextErrors).length === 0;
   }
 
-  function goNext() {
+  function buildClaimPayload() {
+    return {
+      farmer: {
+        farmer_name: formData.farmer_name.trim(),
+        mobile_number: formData.mobile_number.trim(),
+      },
+      crop_type: formData.crop_type.trim(),
+      damage_type: formData.damage_type,
+      damage_date: formData.damage_date,
+      district: formData.district.trim(),
+      village: formData.village.trim(),
+    };
+  }
+
+  async function goNext() {
     if (!validateCurrentStep()) return;
+
+    const stepKey = STEPS[stepIndex].key;
+
+    // Create the claim right as the farmer leaves the Damage step, so the
+    // Evidence step has a real claim_id to upload photos against.
+    if (stepKey === "damage" && !claimId) {
+      setSubmitError("");
+      setCreatingClaim(true);
+      try {
+        const claim = await createClaim(buildClaimPayload());
+        setClaimId(claim.claim_id);
+        setStepIndex((index) => Math.min(index + 1, STEPS.length - 1));
+      } catch (error) {
+        setSubmitError(extractErrorMessage(error));
+      } finally {
+        setCreatingClaim(false);
+      }
+      return;
+    }
+
     setStepIndex((index) => Math.min(index + 1, STEPS.length - 1));
   }
 
@@ -110,19 +199,15 @@ export default function NewClaimPage() {
     setSubmitError("");
     setSubmitting(true);
     try {
-      const payload = {
-        farmer: {
-          farmer_name: formData.farmer_name.trim(),
-          mobile_number: formData.mobile_number.trim(),
-        },
-        crop_type: formData.crop_type.trim(),
-        damage_type: formData.damage_type,
-        damage_date: formData.damage_date,
-        district: formData.district.trim(),
-        village: formData.village.trim(),
-      };
-      const claim = await createClaim(payload);
-      navigate(`/claims/${claim.claim_id}/success`);
+      // Normally the claim already exists by this point (created after the
+      // Damage step). This is just a safety fallback in case that step was
+      // somehow skipped.
+      let id = claimId;
+      if (!id) {
+        const claim = await createClaim(buildClaimPayload());
+        id = claim.claim_id;
+      }
+      navigate(`/claims/${id}/success`);
     } catch (error) {
       setSubmitError(extractErrorMessage(error));
     } finally {
@@ -143,6 +228,80 @@ export default function NewClaimPage() {
       </header>
 
       <main className="flex-1 px-6 py-10">
+        <div className="max-w-2xl mx-auto mb-6">
+          <div className="bg-white border border-line rounded-2xl p-6 sm:p-8 shadow-sm flex flex-col items-center gap-3 text-center">
+            <h2 className="font-display text-lg font-semibold text-ink">
+              Speak your claim details
+            </h2>
+            <p className="text-sm text-ink/60 max-w-md">
+              Tap the mic and describe your name, mobile number, crop, what
+              happened, and your village and district - in Kannada or
+              English. We'll fill in the form below; just review and
+              correct anything before you continue.
+            </p>
+
+            <fieldset className="flex items-center gap-5">
+              <legend className="sr-only">Speech language</legend>
+              {SPEECH_LANGUAGE_OPTIONS.map((option) => (
+                <label
+                  key={option.value}
+                  className="flex items-center gap-1.5 text-sm text-ink/80 cursor-pointer"
+                >
+                  <input
+                    type="radio"
+                    name="speech_language"
+                    value={option.value}
+                    checked={speechLanguage === option.value}
+                    onChange={() => setSpeechLanguage(option.value)}
+                    className="accent-forest"
+                  />
+                  {option.label}
+                </label>
+              ))}
+            </fieldset>
+
+            <MicButton
+              size="lg"
+              label="claim details"
+              language={speechLanguage}
+              onTranscript={handleBulkTranscript}
+            />
+
+            {voiceResult && (
+              <div className="w-full max-w-sm text-left bg-forest/5 border border-forest/20 rounded-lg px-4 py-3 mt-1">
+                {voiceResult.recognizedKeys.length > 0 ? (
+                  <>
+                    <p className="text-sm font-medium text-forest flex items-center gap-1.5">
+                      <CheckIcon className="h-4 w-4" />
+                      Voice processed successfully
+                    </p>
+                    <p className="text-xs text-ink/60 mt-1 mb-1.5">
+                      Recognized details:
+                    </p>
+                    <ul className="text-sm text-ink/80 flex flex-col gap-0.5">
+                      {FIELD_LABELS.filter((f) =>
+                        voiceResult.recognizedKeys.includes(f.key)
+                      ).map((f) => (
+                        <li key={f.key} className="flex items-center gap-1.5">
+                          <span aria-hidden="true" className="text-forest">
+                            •
+                          </span>
+                          {f.label}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : (
+                  <p className="text-sm text-clay">
+                    Couldn't recognize any details from that recording.
+                    Please try again, or fill in the form below manually.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="max-w-2xl mx-auto">
           <div className="bg-white border border-line rounded-2xl overflow-hidden shadow-sm">
             <StepTabs steps={STEPS} currentIndex={stepIndex} />
@@ -158,6 +317,7 @@ export default function NewClaimPage() {
                       Who is this claim being filed for?
                     </p>
                   </div>
+
                   <FormField
                     label="Farmer's full name"
                     name="farmer_name"
@@ -166,6 +326,7 @@ export default function NewClaimPage() {
                     error={errors.farmer_name}
                     placeholder="e.g. Basavaraj Patil"
                   />
+
                   <FormField
                     label="Mobile number"
                     name="mobile_number"
@@ -247,6 +408,16 @@ export default function NewClaimPage() {
                 </div>
               )}
 
+              {stepKey === "evidence" && (
+                <div className="flex flex-col gap-5">
+                  <EvidenceUploader
+                    claimId={claimId}
+                    evidenceItems={evidenceItems}
+                    setEvidenceItems={setEvidenceItems}
+                  />
+                </div>
+              )}
+
               {stepKey === "review" && (
                 <div className="flex flex-col gap-5">
                   <div>
@@ -273,14 +444,22 @@ export default function NewClaimPage() {
                     <ReviewRow label="Damage date" value={formData.damage_date} />
                     <ReviewRow label="District" value={formData.district} />
                     <ReviewRow label="Village" value={formData.village} />
+                    <ReviewRow
+                      label="Evidence photos"
+                      value={
+                        evidenceItems.length > 0
+                          ? `${evidenceItems.length} uploaded`
+                          : "None uploaded"
+                      }
+                    />
                   </dl>
-
-                  {submitError && (
-                    <p className="text-sm text-clay bg-clay/10 border border-clay/30 rounded-lg px-4 py-3">
-                      {submitError}
-                    </p>
-                  )}
                 </div>
+              )}
+
+              {submitError && (
+                <p className="text-sm text-clay bg-clay/10 border border-clay/30 rounded-lg px-4 py-3 mt-6">
+                  {submitError}
+                </p>
               )}
 
               <div className="flex items-center justify-between mt-8 pt-6 border-t border-line">
@@ -296,7 +475,9 @@ export default function NewClaimPage() {
                     Submit claim
                   </Button>
                 ) : (
-                  <Button onClick={goNext}>Continue →</Button>
+                  <Button onClick={goNext} loading={creatingClaim}>
+                    Continue →
+                  </Button>
                 )}
               </div>
             </div>
