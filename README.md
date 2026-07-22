@@ -70,22 +70,6 @@ View Claim
 Generate & Download PDF Report
 ```
 
----
-
-## Screenshots
-
-> Add screenshots here.
-
-- Landing Page
-- New Claim
-- Evidence Upload
-- AI Classification
-- Weather Validation
-- View Claim
-- Generated PDF
-
----
-
 ## Installation
 
 ### Clone the repository
