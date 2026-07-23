@@ -7,7 +7,7 @@ import { useLanguage } from "../context/LanguageContext";
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_SIZE_MB = 10;
 const MAX_IMAGES = 5;
-const CLASSIFY_ENDPOINT = "/api/classify";
+const CLASSIFY_ENDPOINT = `${import.meta.env.VITE_API_BASE_URL.replace(/\/$/, "")}/classify`;
 
 /**
  * EvidenceUploader
