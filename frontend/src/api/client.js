@@ -8,7 +8,7 @@ import axios from "axios";
  * origin, avoiding CORS complications during development.
  */
 export const apiClient = axios.create({
-  baseURL: "/api",
+  baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: 15000,
 });
 
