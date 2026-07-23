@@ -33,6 +33,13 @@ class Farmer(Base):
     mobile_number: Mapped[str] = mapped_column(
         String(15), nullable=False, unique=True, index=True
     )
+    # Nullable: added after the initial schema, so existing farmer rows have
+    # no value here and must keep loading/working without one. Only new
+    # claim submissions through the updated frontend flow populate this.
+    # Stored as a plain string (not int) to preserve leading digits and
+    # avoid overflow; full 12-digit value lives here, masking happens only
+    # at display time (frontend + PDF), never at storage or API-read time.
+    aadhaar_number: Mapped[str | None] = mapped_column(String(12), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False
     )

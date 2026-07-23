@@ -31,6 +31,7 @@ def get_or_create_farmer(db: Session, farmer_data: FarmerCreate) -> Farmer:
     farmer = Farmer(
         farmer_name=farmer_data.farmer_name,
         mobile_number=farmer_data.mobile_number,
+        aadhaar_number=farmer_data.aadhaar_number,
     )
     db.add(farmer)
     db.flush()  # assigns farmer.farmer_id without committing the transaction yet

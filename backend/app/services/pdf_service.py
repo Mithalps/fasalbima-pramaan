@@ -125,6 +125,18 @@ def _farmer_field(farmer, attr_candidates):
     return "N/A"
 
 
+def _mask_aadhaar(value: str) -> str:
+    """
+    Masks all but the last 4 digits, grouped in 4s: 'XXXX XXXX 1234'.
+    Storage/model/API values stay full-length -- this formatting is applied
+    only at PDF-render time, right before the value goes into the flowable.
+    """
+    digits = value.replace(" ", "")
+    if len(digits) < 4:
+        return "XXXX XXXX XXXX"
+    return f"XXXX XXXX {digits[-4:]}"
+
+
 def _label_value_table(rows, col_widths=(40 * mm, 110 * mm)):
     table = Table(rows, colWidths=list(col_widths), hAlign="LEFT")
     table.setStyle(_LABEL_VALUE_TABLE_STYLE)
@@ -145,7 +157,10 @@ def _build_farmer_section(claim) -> list:
 
     rows = []
     for label, candidates in FARMER_FIELD_MAP.items():
-        rows.append([f"{label}:", _farmer_field(farmer, candidates)])
+        value = _farmer_field(farmer, candidates)
+        if label == "Aadhaar Number" and value != "N/A":
+            value = _mask_aadhaar(value)
+        rows.append([f"{label}:", value])
 
     flowables.append(_label_value_table(rows))
     flowables.append(Spacer(1, 6))

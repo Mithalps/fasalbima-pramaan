@@ -4,6 +4,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, field_validator
 
 _MOBILE_PATTERN = re.compile(r"^[6-9]\d{9}$")
+_AADHAAR_PATTERN = re.compile(r"^\d{12}$")
 
 
 class FarmerCreate(BaseModel):
@@ -11,6 +12,7 @@ class FarmerCreate(BaseModel):
 
     farmer_name: str
     mobile_number: str
+    aadhaar_number: str
 
     @field_validator("farmer_name")
     @classmethod
@@ -30,6 +32,14 @@ class FarmerCreate(BaseModel):
             )
         return value
 
+    @field_validator("aadhaar_number")
+    @classmethod
+    def aadhaar_must_be_twelve_digits(cls, value: str) -> str:
+        value = value.strip().replace(" ", "")
+        if not _AADHAAR_PATTERN.match(value):
+            raise ValueError("Aadhaar number must be a 12-digit number")
+        return value
+
 
 class FarmerRead(BaseModel):
     """Output schema — what the API returns for a farmer, nested inside a claim."""
@@ -37,6 +47,11 @@ class FarmerRead(BaseModel):
     farmer_id: str
     farmer_name: str
     mobile_number: str
+    # Existing farmer rows created before this field existed have no value
+    # here, so this stays optional. Returned as the full, unmasked value —
+    # masking is applied only where the value is displayed (frontend pages,
+    # PDF report), not at the API/schema layer.
+    aadhaar_number: str | None = None
     created_at: datetime
 
     # Lets Pydantic build this schema directly from a SQLAlchemy ORM object
