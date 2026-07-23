@@ -1,6 +1,6 @@
 # 🌾 FasalBima Pramaan
 
-**AI-Powered Crop Insurance Claim Assistant for PMFBY**
+**Digital Crop Insurance Claim Assistant for PMFBY**
 
 FasalBima Pramaan is a Digital platform that simplifies crop insurance claim filing under the Pradhan Mantri Fasal Bima Yojana (PMFBY). The system enables farmers to submit structured claims using multilingual voice input, AI-based crop damage assessment, weather validation, and automated evidence report generation.
 
