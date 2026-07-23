@@ -130,10 +130,10 @@ export default function MicButton({ onTranscript, language = "kn", label }) {
             : `Speak to fill in${label ? ` ${label}` : " this field"}`
         }
         title={state === STATE.RECORDING ? "Tap to stop" : "Tap to speak"}
-        className={`h-9 w-9 shrink-0 rounded-full flex items-center justify-center border transition-colors focus:outline-none focus:ring-2 focus:ring-forest/40 disabled:cursor-not-allowed ${
+        className={`h-11 w-11 min-h-[44px] min-w-[44px] shrink-0 rounded-xl flex items-center justify-center border transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed ${
           state === STATE.RECORDING
-            ? "bg-clay text-paper border-clay animate-pulse"
-            : "bg-white text-forest border-line hover:border-forest"
+            ? "bg-forest text-paper border-forest shadow-[var(--shadow-pop)]"
+            : "bg-white text-forest border-line shadow-sm hover:border-forest hover:shadow-[var(--shadow-pop)]"
         }`}
       >
         {state === STATE.TRANSCRIBING ? (
@@ -146,7 +146,7 @@ export default function MicButton({ onTranscript, language = "kn", label }) {
       </button>
 
       {error && (
-        <p className="text-xs text-clay max-w-[10rem] text-right leading-snug">{error}</p>
+        <p className="text-sm text-clay max-w-[10rem] text-right leading-snug">{error}</p>
       )}
     </div>
   );

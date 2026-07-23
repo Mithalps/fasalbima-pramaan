@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { uploadEvidence, deleteEvidence } from "../api/evidence";
 import { extractErrorMessage } from "../api/client";
 import { CloseIcon, UploadIcon } from "./Icons";
+import { useLanguage } from "../context/LanguageContext";
 
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_SIZE_MB = 10;
@@ -27,6 +28,7 @@ const CLASSIFY_ENDPOINT = "/api/classify";
  * photo stays uploaded and the farmer can continue the claim as normal.
  */
 export default function EvidenceUploader({ claimId, evidenceItems, setEvidenceItems }) {
+  const { t } = useLanguage();
   const [uploading, setUploading] = useState([]); // { clientId, name, previewUrl, progress, error }
   const [dragActive, setDragActive] = useState(false);
   const [classifications, setClassifications] = useState({}); // evidenceId -> { status, prediction, confidence }
@@ -44,10 +46,10 @@ export default function EvidenceUploader({ claimId, evidenceItems, setEvidenceIt
 
   function validateFile(file) {
     if (!ACCEPTED_TYPES.includes(file.type)) {
-      return "Only JPEG, PNG, or WEBP images are allowed.";
+      return t("evidence.errorFileType");
     }
     if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-      return `File is larger than ${MAX_SIZE_MB}MB.`;
+      return t("evidence.errorFileSize", { maxSize: MAX_SIZE_MB });
     }
     return null;
   }
@@ -67,7 +69,7 @@ export default function EvidenceUploader({ claimId, evidenceItems, setEvidenceIt
           name: file.name,
           previewUrl: null,
           progress: 0,
-          error: `Limit reached — a claim can have at most ${MAX_IMAGES} photos.`,
+          error: t("evidence.errorLimitReached", { maxImages: MAX_IMAGES }),
         });
         continue;
       }
@@ -164,7 +166,7 @@ export default function EvidenceUploader({ claimId, evidenceItems, setEvidenceIt
   function formatConfidence(confidence) {
     if (typeof confidence !== "number" || Number.isNaN(confidence)) return null;
     const percent = confidence <= 1 ? confidence * 100 : confidence;
-    return `${percent.toFixed(1)}%`;
+    return t("evidence.confidence", { percent: `${percent.toFixed(1)}%` });
   }
 
   function dismissFailedUpload(clientId) {
@@ -197,18 +199,16 @@ export default function EvidenceUploader({ claimId, evidenceItems, setEvidenceIt
     <div className="flex flex-col gap-4">
       <div>
         <h2 className="font-display text-xl font-semibold text-ink">
-          Evidence photos
+          {t("evidence.heading")}
         </h2>
-        <p className="text-sm text-ink/60 mt-1">
-          Upload photos of the crop damage. Up to {MAX_IMAGES} images, JPEG/PNG/WEBP, max{" "}
-          {MAX_SIZE_MB}MB each.
+        <p className="text-sm text-ink/70 mt-1">
+          {t("evidence.description", { maxImages: MAX_IMAGES, maxSize: MAX_SIZE_MB })}
         </p>
       </div>
 
       {!claimId && (
         <p className="text-sm text-clay bg-clay/10 border border-clay/30 rounded-lg px-4 py-3">
-          Please complete the previous steps first — the claim needs to be
-          created before photos can be uploaded.
+          {t("evidence.needsClaimFirst")}
         </p>
       )}
 
@@ -222,10 +222,10 @@ export default function EvidenceUploader({ claimId, evidenceItems, setEvidenceIt
         onDragLeave={() => setDragActive(false)}
         onDrop={handleDrop}
         disabled={!canUpload}
-        className={`w-full rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors focus:outline-none focus:ring-2 focus:ring-forest/40 ${
+        className={`w-full rounded-xl border-2 border-dashed px-6 py-10 text-center transition-all duration-150 ${
           dragActive
-            ? "border-forest bg-forest/5"
-            : "border-line bg-paper/60 hover:border-forest/60"
+            ? "border-forest bg-forest/5 shadow-[var(--shadow-pop)]"
+            : "border-line bg-paper-raised/60 hover:border-forest/50 hover:bg-white"
         } ${!canUpload ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
       >
         <input
@@ -239,19 +239,25 @@ export default function EvidenceUploader({ claimId, evidenceItems, setEvidenceIt
             event.target.value = ""; // allow re-selecting the same file later
           }}
         />
-        <UploadIcon
-          className={`h-6 w-6 mx-auto mb-2 ${
-            dragActive ? "text-forest" : "text-ink/30"
+        <span
+          className={`mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full transition-colors duration-150 ${
+            dragActive ? "bg-forest/10" : "bg-line/60"
           }`}
-        />
+        >
+          <UploadIcon
+            className={`h-5 w-5 ${dragActive ? "text-forest" : "text-ink/40"}`}
+          />
+        </span>
         <p className="text-sm font-medium text-ink">
           {slotsRemaining === 0
-            ? "Photo limit reached"
-            : "Drag and drop photos here, or click to browse"}
+            ? t("evidence.limitReached")
+            : t("evidence.dropInstructions")}
         </p>
-        <p className="text-xs text-ink/50 mt-1">
-          {evidenceItems.length + uploading.filter((u) => !u.error).length} of {MAX_IMAGES}{" "}
-          photos added
+        <p className="text-xs text-ink/70 mt-1">
+          {t("evidence.countAdded", {
+            count: evidenceItems.length + uploading.filter((u) => !u.error).length,
+            maxImages: MAX_IMAGES,
+          })}
         </p>
       </button>
 
@@ -261,7 +267,7 @@ export default function EvidenceUploader({ claimId, evidenceItems, setEvidenceIt
             const classification = classifications[item.id];
             return (
               <div key={item.id} className="flex flex-col gap-1.5">
-                <div className="relative group aspect-square rounded-lg overflow-hidden border border-line bg-white">
+                <div className="relative group aspect-square rounded-lg overflow-hidden border border-line bg-white shadow-sm transition-shadow duration-150 hover:shadow-[var(--shadow-pop)]">
                 <img
                     src={`${API_BASE}${item.file_url}`}
                     alt={item.file_name}
@@ -270,7 +276,7 @@ export default function EvidenceUploader({ claimId, evidenceItems, setEvidenceIt
                   <button
                     type="button"
                     onClick={() => handleDeleteEvidence(item.id)}
-                    aria-label={`Remove ${item.file_name}`}
+                    aria-label={t("evidence.removeAria", { fileName: item.file_name })}
                     className="absolute top-1.5 right-1.5 h-7 w-7 rounded-full bg-ink/70 text-paper flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity hover:bg-clay"
                   >
                     <CloseIcon className="h-3.5 w-3.5" />
@@ -278,25 +284,26 @@ export default function EvidenceUploader({ claimId, evidenceItems, setEvidenceIt
                 </div>
 
                 {classification?.status === "loading" && (
-                  <p className="text-xs text-ink/50 px-0.5">Analyzing photo…</p>
+                  <p className="text-xs text-ink/70 px-0.5 flex items-center gap-1.5">
+                    <span className="h-3 w-3 rounded-full border-2 border-ink/30 border-t-transparent animate-spin" />
+                    {t("evidence.analyzing")}
+                  </p>
                 )}
 
                 {classification?.status === "done" && (
-                  <div className="text-xs text-ink/80 px-0.5 leading-snug">
-                    <p>
-                      <span className="font-medium text-ink">AI Prediction:</span>{" "}
+                  <div className="flex flex-col gap-1 px-0.5">
+                    <span className="inline-flex w-fit items-center gap-1 rounded-full bg-forest/10 border border-forest/25 px-2 py-0.5 text-[11px] font-semibold text-forest">
                       {classification.prediction}
-                    </p>
-                    <p>
-                      <span className="font-medium text-ink">Confidence:</span>{" "}
+                    </span>
+                    <span className="text-[11px] text-ink/70">
                       {formatConfidence(classification.confidence)}
-                    </p>
+                    </span>
                   </div>
                 )}
 
                 {classification?.status === "error" && (
-                  <p className="text-xs text-ink/40 px-0.5">
-                    AI prediction unavailable
+                  <p className="text-xs text-ink/70 px-0.5">
+                    {t("evidence.predictionUnavailable")}
                   </p>
                 )}
               </div>
@@ -335,9 +342,9 @@ export default function EvidenceUploader({ claimId, evidenceItems, setEvidenceIt
                   <button
                     type="button"
                     onClick={() => dismissFailedUpload(item.clientId)}
-                    className="text-[11px] font-semibold text-ink/60 hover:text-ink underline"
+                    className="text-[11px] font-semibold text-ink/70 hover:text-ink underline"
                   >
-                    Dismiss
+                    {t("evidence.dismiss")}
                   </button>
                 </div>
               )}

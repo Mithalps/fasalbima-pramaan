@@ -1,61 +1,65 @@
 import { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { getClaim } from "../api/claims";
 import { extractErrorMessage } from "../api/client";
 import { downloadClaimPdf } from "../api/pdf";
 import Button from "../components/Button";
+import { RecordSection, RecordField } from "../components/RecordSection";
+import { UserIcon, LeafIcon, WarningIcon, PinIcon, CloudIcon } from "../components/Icons";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
+import { useLanguage } from "../context/LanguageContext";
 
-const DAMAGE_TYPE_LABELS = {
-  flood: "Flood",
-  drought: "Drought",
-  hailstorm: "Hailstorm",
-  pest_attack: "Pest Attack",
-  other: "Other",
-};
+// Masks all but the last 4 digits, e.g. "123456789012" -> "XXXX XXXX 9012".
+// The API returns the full value (masking is a presentation-layer concern),
+// so every screen that displays it masks it locally before rendering.
+function maskAadhaar(value) {
+  const digits = (value || "").replace(/\s/g, "");
+  if (digits.length < 4) return "XXXX XXXX XXXX";
+  return `XXXX XXXX ${digits.slice(-4)}`;
+}
 
 const STATUS_STYLES = {
   submitted: "bg-wheat/20 text-soil border-wheat/40",
-  under_review: "bg-forest/10 text-forest border-forest/30",
+  under_review: "bg-olive/10 text-olive-dark border-olive/30",
   evidence_ready: "bg-forest/10 text-forest border-forest/30",
-  closed: "bg-line text-ink/50 border-line",
+  closed: "bg-line text-ink/70 border-line",
 };
 
 // Keyed by String(weather_verified) so the `null` case (weather validation
 // not applicable / unavailable) has an explicit, distinct style rather than
-// falling through to true/false styling.
-const WEATHER_STATUS_CONFIG = {
-  true: {
-    label: "Verified",
-    dotClass: "bg-forest",
-    badgeClass: "bg-forest/10 text-forest border-forest/30",
-  },
-  false: {
-    label: "Not Verified",
-    dotClass: "bg-soil",
-    badgeClass: "bg-wheat/20 text-soil border-wheat/40",
-  },
-  null: {
-    label: "Not Applicable",
-    dotClass: "bg-sky",
-    badgeClass: "bg-sky/10 text-sky border-sky/30",
-  },
+// falling through to true/false styling. Labels come from t() at render
+// time since they're translated UI copy, not fixed style tokens.
+const WEATHER_STATUS_STYLE = {
+  true: { dotClass: "bg-forest", badgeClass: "bg-forest/10 text-forest border-forest/30" },
+  false: { dotClass: "bg-soil", badgeClass: "bg-wheat/20 text-soil border-wheat/40" },
+  null: { dotClass: "bg-sky", badgeClass: "bg-sky/10 text-sky border-sky/30" },
 };
-
-const WEATHER_METRICS = [
-  { key: "precipitation", label: "Rainfall (mm)" },
-  { key: "temperature_max", label: "Maximum Temperature (°C)" },
-  { key: "temperature_min", label: "Minimum Temperature (°C)" },
-  { key: "windspeed", label: "Wind Speed (km/h)" },
-];
 
 export default function ViewClaimPage() {
   const { claimId } = useParams();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [claim, setClaim] = useState(null);
   const [status, setStatus] = useState("loading"); // loading | ready | not_found | error
   const [errorMessage, setErrorMessage] = useState("");
   const [pdfDownloading, setPdfDownloading] = useState(false);
   const [pdfError, setPdfError] = useState("");
+
+  const DAMAGE_TYPE_LABELS = {
+    flood: t("damageTypes.flood"),
+    drought: t("damageTypes.drought"),
+    hailstorm: t("damageTypes.hailstorm"),
+    pest_attack: t("damageTypes.pest_attack"),
+    other: t("damageTypes.other"),
+  };
+
+  const STATUS_LABELS = {
+    submitted: t("claimStatuses.submitted"),
+    under_review: t("claimStatuses.under_review"),
+    evidence_ready: t("claimStatuses.evidence_ready"),
+    closed: t("claimStatuses.closed"),
+  };
 
   async function handleDownloadPdf() {
     setPdfDownloading(true);
@@ -98,65 +102,56 @@ export default function ViewClaimPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="border-b border-line bg-white">
-        <div className="max-w-3xl mx-auto px-6 py-5">
-          <Link
-            to="/"
-            className="font-display text-xl font-semibold text-forest"
-          >
-            FasalBima Pramaan
-          </Link>
-        </div>
-      </header>
+      <Header contextLabel={t("header.contextClaimRecord")} />
 
       <main className="flex-1 px-6 py-10">
-        <div className="max-w-2xl mx-auto flex flex-col gap-6">
+        <div className="max-w-4xl mx-auto flex flex-col gap-6">
           {status === "loading" && (
-            <div className="bg-white border border-line rounded-2xl p-10 flex items-center justify-center gap-3 text-ink/60">
+            <div className="bg-white border border-line rounded-xl p-10 flex items-center justify-center gap-3 text-ink/70 shadow-[var(--shadow-card)]">
               <span className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
-              Loading claim…
+              {t("viewClaim.loading")}
             </div>
           )}
 
           {status === "not_found" && (
-            <div className="bg-white border border-line rounded-2xl p-10 text-center">
+            <div className="bg-white border border-line rounded-xl p-10 text-center shadow-[var(--shadow-card)]">
               <h1 className="font-display text-xl font-semibold text-ink mb-2">
-                No claim found for this ID
+                {t("viewClaim.notFoundHeading")}
               </h1>
-              <p className="text-ink/60 mb-6">
-                Double-check the Claim ID and try again.
+              <p className="text-ink/70 mb-6">
+                {t("viewClaim.notFoundBody")}
               </p>
               <button
                 onClick={() => navigate("/")}
                 className="text-forest font-medium hover:underline"
               >
-                ← Back to home
+                {t("viewClaim.backHome")}
               </button>
             </div>
           )}
 
           {status === "error" && (
-            <div className="bg-white border border-line rounded-2xl p-10 text-center">
+            <div className="bg-white border border-line rounded-xl p-10 text-center shadow-[var(--shadow-card)]">
               <h1 className="font-display text-xl font-semibold text-ink mb-2">
-                Couldn't load this claim
+                {t("viewClaim.errorHeading")}
               </h1>
               <p className="text-clay mb-6">{errorMessage}</p>
               <button
                 onClick={() => window.location.reload()}
                 className="text-forest font-medium hover:underline"
               >
-                Try again
+                {t("viewClaim.tryAgain")}
               </button>
             </div>
           )}
 
           {status === "ready" && claim && (
             <>
-              <div className="bg-white border border-line rounded-2xl overflow-hidden shadow-sm">
+              <div className="bg-white border border-line rounded-xl overflow-hidden shadow-[var(--shadow-card)]">
                 <div className="px-6 sm:px-8 py-6 border-b border-line flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold tracking-widest text-soil uppercase mb-1">
-                      Claim ID
+                      {t("viewClaim.claimIdLabel")}
                     </p>
                     <p className="font-mono text-sm text-ink break-all">
                       {claim.claim_id}
@@ -166,14 +161,14 @@ export default function ViewClaimPage() {
                     <span
                       className={`text-xs font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full border ${STATUS_STYLES[claim.status] ?? STATUS_STYLES.submitted}`}
                     >
-                      {claim.status.replace("_", " ")}
+                      {STATUS_LABELS[claim.status] ?? claim.status.replace("_", " ")}
                     </span>
                     <Button
                       variant="secondary"
                       onClick={handleDownloadPdf}
                       disabled={pdfDownloading}
                     >
-                      {pdfDownloading ? "Preparing PDF…" : "Download Evidence Report"}
+                      {pdfDownloading ? t("viewClaim.preparingPdf") : t("viewClaim.downloadPdf")}
                     </Button>
                   </div>
                 </div>
@@ -187,32 +182,38 @@ export default function ViewClaimPage() {
                 )}
 
                 <div className="px-6 sm:px-8 py-6 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
-                  <Section title="Farmer">
-                    <Field label="Name" value={claim.farmer.farmer_name} />
-                    <Field label="Mobile number" value={claim.farmer.mobile_number} />
-                  </Section>
+                  <RecordSection title={t("sections.farmer")} icon={<UserIcon className="h-3.5 w-3.5" />}>
+                    <RecordField label={t("recordLabels.name")} value={claim.farmer.farmer_name} />
+                    <RecordField label={t("recordLabels.mobileNumber")} value={claim.farmer.mobile_number} />
+                    {claim.farmer.aadhaar_number && (
+                      <RecordField
+                        label={t("recordLabels.aadhaarNumber")}
+                        value={maskAadhaar(claim.farmer.aadhaar_number)}
+                      />
+                    )}
+                  </RecordSection>
 
-                  <Section title="Crop">
-                    <Field label="Crop type" value={claim.crop_type} />
-                  </Section>
+                  <RecordSection title={t("sections.crop")} icon={<LeafIcon className="h-3.5 w-3.5" />}>
+                    <RecordField label={t("recordLabels.cropType")} value={claim.crop_type} />
+                  </RecordSection>
 
-                  <Section title="Damage">
-                    <Field
-                      label="Type"
+                  <RecordSection title={t("sections.damage")} icon={<WarningIcon className="h-3.5 w-3.5" />}>
+                    <RecordField
+                      label={t("recordLabels.type")}
                       value={DAMAGE_TYPE_LABELS[claim.damage_type] ?? claim.damage_type}
                     />
-                    <Field label="Date" value={claim.damage_date} />
-                  </Section>
+                    <RecordField label={t("recordLabels.date")} value={claim.damage_date} />
+                  </RecordSection>
 
-                  <Section title="Location">
-                    <Field label="District" value={claim.district} />
-                    <Field label="Village" value={claim.village} />
-                  </Section>
+                  <RecordSection title={t("sections.location")} icon={<PinIcon className="h-3.5 w-3.5" />}>
+                    <RecordField label={t("recordLabels.district")} value={claim.district} />
+                    <RecordField label={t("recordLabels.village")} value={claim.village} />
+                  </RecordSection>
                 </div>
 
-                <div className="px-6 sm:px-8 py-4 border-t border-line bg-paper/60 text-xs text-ink/50 flex flex-wrap justify-between gap-2">
-                  <span>Filed on {new Date(claim.created_at).toLocaleString()}</span>
-                  <span>Last updated {new Date(claim.updated_at).toLocaleString()}</span>
+                <div className="px-6 sm:px-8 py-4 border-t border-line bg-paper/60 text-xs text-ink/70 flex flex-wrap justify-between gap-2">
+                  <span>{t("viewClaim.filedOn", { date: new Date(claim.created_at).toLocaleString() })}</span>
+                  <span>{t("viewClaim.lastUpdated", { date: new Date(claim.updated_at).toLocaleString() })}</span>
                 </div>
               </div>
 
@@ -221,72 +222,71 @@ export default function ViewClaimPage() {
           )}
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 }
 
 function WeatherValidationCard({ claim }) {
+  const { t } = useLanguage();
+
+  const WEATHER_STATUS_LABEL = {
+    true: t("viewClaim.weatherVerified"),
+    false: t("viewClaim.weatherNotVerified"),
+    null: t("viewClaim.weatherNotApplicable"),
+  };
+
+  const WEATHER_METRICS = [
+    { key: "precipitation", label: t("viewClaim.rainfall") },
+    { key: "temperature_max", label: t("viewClaim.tempMax") },
+    { key: "temperature_min", label: t("viewClaim.tempMin") },
+    { key: "windspeed", label: t("viewClaim.windSpeed") },
+  ];
+
   const verified = claim.weather_verified ?? null;
-  const weatherStatus =
-    WEATHER_STATUS_CONFIG[String(verified)] ?? WEATHER_STATUS_CONFIG.null;
+  const key = String(verified);
+  const style = WEATHER_STATUS_STYLE[key] ?? WEATHER_STATUS_STYLE.null;
+  const label = WEATHER_STATUS_LABEL[key] ?? WEATHER_STATUS_LABEL.null;
 
   const visibleMetrics = WEATHER_METRICS.filter(
     ({ key }) => claim[key] !== null && claim[key] !== undefined
   );
 
   return (
-    <div className="bg-white border border-line rounded-2xl overflow-hidden shadow-sm">
+    <div className="bg-white border border-line rounded-xl overflow-hidden shadow-[var(--shadow-card)]">
       <div className="px-6 sm:px-8 py-6 border-b border-line flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-lg font-semibold text-ink">
-          Weather Validation
+        <h1 className="flex items-center gap-2 font-display text-lg font-semibold text-ink">
+          <CloudIcon className="h-4 w-4 text-sky" />
+          {t("viewClaim.weatherValidationHeading")}
         </h1>
         <span
-          className={`inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full border ${weatherStatus.badgeClass}`}
+          className={`inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full border ${style.badgeClass}`}
         >
           <span
             aria-hidden="true"
-            className={`h-1.5 w-1.5 rounded-full ${weatherStatus.dotClass}`}
+            className={`h-1.5 w-1.5 rounded-full ${style.dotClass}`}
           />
-          {weatherStatus.label}
+          {label}
         </span>
       </div>
 
       <div className="px-6 sm:px-8 py-6 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
-        <Section title="Result">
-          <Field label="Validation status" value={weatherStatus.label} />
+        <RecordSection title={t("sections.result")}>
+          <RecordField label={t("recordLabels.validationStatus")} value={label} />
           {claim.weather_reason && (
-            <Field label="Reason" value={claim.weather_reason} />
+            <RecordField label={t("recordLabels.reason")} value={claim.weather_reason} />
           )}
-        </Section>
+        </RecordSection>
 
         {visibleMetrics.length > 0 && (
-          <Section title="Recorded weather">
+          <RecordSection title={t("sections.recordedWeather")}>
             {visibleMetrics.map(({ key, label }) => (
-              <Field key={key} label={label} value={claim[key]} />
+              <RecordField key={key} label={label} value={claim[key]} />
             ))}
-          </Section>
+          </RecordSection>
         )}
       </div>
-    </div>
-  );
-}
-
-function Section({ title, children }) {
-  return (
-    <div>
-      <h2 className="text-xs font-semibold tracking-widest text-soil uppercase mb-3">
-        {title}
-      </h2>
-      <div className="flex flex-col gap-2">{children}</div>
-    </div>
-  );
-}
-
-function Field({ label, value }) {
-  return (
-    <div className="flex justify-between gap-4">
-      <span className="text-sm text-ink/60">{label}</span>
-      <span className="text-sm font-medium text-ink text-right">{value}</span>
     </div>
   );
 }

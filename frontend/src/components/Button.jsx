@@ -14,14 +14,15 @@ export default function Button({
   fullWidth = false,
 }) {
   const base =
-    "inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
+    "inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 min-h-[44px] text-sm font-semibold tracking-wide whitespace-nowrap transition-all duration-150 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 disabled:cursor-not-allowed";
 
   const variants = {
     primary:
-      "bg-forest text-paper hover:bg-forest-dark focus:ring-forest",
+      "bg-forest text-paper shadow-[var(--shadow-pop)] hover:bg-forest-dark hover:shadow-[var(--shadow-card-hover)]",
     secondary:
-      "bg-white text-ink border border-line hover:border-forest hover:text-forest focus:ring-forest",
-    danger: "bg-clay text-paper hover:bg-clay/90 focus:ring-clay",
+      "bg-white text-ink border border-line hover:border-forest hover:text-forest hover:shadow-[var(--shadow-pop)]",
+    danger:
+      "bg-clay text-paper shadow-[var(--shadow-pop)] hover:bg-clay/90 hover:shadow-[var(--shadow-card-hover)]",
   };
 
   return (

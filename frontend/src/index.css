@@ -1,21 +1,31 @@
 @import "tailwindcss";
 
 @theme {
-  /* Palette — warm ledger paper, crop-field green, soil brown, wheat gold.
+  /* Palette — warm ledger paper, crop-field green, olive, soil, wheat gold.
      Chosen for a farmer-facing government/insurance tool, not a startup SaaS look. */
-  --color-paper: #faf6ee;
+  --color-paper: #f7f3ec;
+  --color-paper-raised: #faf7f2;
   --color-ink: #22301f;
   --color-forest: #2f4b3c;
   --color-forest-dark: #1f3327;
+  --color-olive: #6b7a3f;
+  --color-olive-dark: #545f30;
   --color-soil: #8b5e3c;
   --color-wheat: #c9a227;
   --color-clay: #a63d40;
   --color-sky: #3d6b8f;
-  --color-line: #d8cfbc;
+  --color-line: #ddd4c1;
 
   --font-display: "Fraunces", ui-serif, serif;
   --font-body: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  /* Elevation — kept understated (a hairline plus a soft, low-contrast
+     drop shadow) rather than default Tailwind shadow-sm/md, so cards read
+     as calm official paperwork rather than app "surfaces". */
+  --shadow-card: 0 1px 2px rgba(34, 48, 31, 0.05), 0 10px 24px -12px rgba(34, 48, 31, 0.18);
+  --shadow-card-hover: 0 2px 4px rgba(34, 48, 31, 0.06), 0 16px 32px -12px rgba(34, 48, 31, 0.22);
+  --shadow-pop: 0 1px 2px rgba(34, 48, 31, 0.06), 0 4px 10px -4px rgba(34, 48, 31, 0.2);
 }
 
 body {
@@ -24,3 +34,24 @@ body {
   font-family: var(--font-body);
 }
 
+/* GOV.UK-style focus treatment: a solid, high-visibility outline rather
+   than a soft ring, applied globally so every interactive element -
+   including plain text links - gets a clearly visible focus state.
+   Uses forest (the accent already driving hover/focus states on Button
+   and FormField - hover:border-forest, focus:border-forest,
+   focus:ring-forest/30) rather than wheat, which the updated components
+   never use for interaction. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--color-forest);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+::selection {
+  background-color: var(--color-forest);
+  color: var(--color-paper);
+}

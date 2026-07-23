@@ -1,4 +1,5 @@
 import { WarningIcon } from "./Icons";
+import { useLanguage } from "../context/LanguageContext";
 
 /**
  * FormField
@@ -6,6 +7,11 @@ import { WarningIcon } from "./Icons";
  * A labeled input (or select) with consistent styling and inline error
  * display. Every field in the claim form uses this so validation errors
  * always render the same way.
+ *
+ * `label`, `placeholder`, and `error` are expected to already be
+ * translated strings (the caller resolves them via t()) — this component
+ * only needs t() itself for the generic "Select {label}" placeholder
+ * option text.
  */
 export default function FormField({
   label,
@@ -19,14 +25,17 @@ export default function FormField({
   options = [],
   required = true,
 }) {
+  const { t } = useLanguage();
   const fieldId = `field-${name}`;
 
-  const baseFieldClasses = `w-full rounded-lg border bg-white px-4 py-3 text-[15px] text-ink placeholder:text-ink/40 focus:outline-none focus:ring-2 focus:ring-forest/40 transition-colors ${
-    error ? "border-clay" : "border-line focus:border-forest"
+  const baseFieldClasses = `w-full min-h-[44px] rounded-xl border bg-white px-4 py-3 text-[15px] text-ink placeholder:text-ink/70 shadow-[inset_0_1px_2px_rgba(34,48,31,0.04)] focus:ring-2 focus:ring-forest/30 transition-colors ${
+    error
+      ? "border-clay"
+      : "border-line hover:border-ink/25 focus:border-forest"
   }`;
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       <label
         htmlFor={fieldId}
         className="text-sm font-medium text-ink/80 tracking-wide"
@@ -44,7 +53,7 @@ export default function FormField({
           className={baseFieldClasses}
         >
           <option value="" disabled>
-            Select {label.toLowerCase()}
+            {t("formField.selectPrefix")} {label}
           </option>
           {options.map((option) => (
             <option key={option.value} value={option.value}>
