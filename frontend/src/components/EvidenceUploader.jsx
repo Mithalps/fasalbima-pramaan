@@ -33,7 +33,7 @@ export default function EvidenceUploader({ claimId, evidenceItems, setEvidenceIt
   const [dragActive, setDragActive] = useState(false);
   const [classifications, setClassifications] = useState({}); // evidenceId -> { status, prediction, confidence }
   const fileInputRef = useRef(null);
-  const API_BASE = "http://localhost:8000";
+  const API_BASE = import.meta.env.VITE_API_BASE_URL.replace("/api", "");
 
   const totalCount = evidenceItems.length + uploading.filter((u) => !u.error).length;
   const slotsRemaining = Math.max(0, MAX_IMAGES - totalCount);
